@@ -46,6 +46,5 @@ const DriverSchema = new mongoose.Schema({
 
 DriverSchema.index({ 'currentLocation': '2dsphere' });
 DriverSchema.index({ status: 1 });
-DriverSchema.index({ user: 1 });
 
 module.exports = mongoose.model('Driver', DriverSchema);

@@ -96,3 +96,40 @@ npm test
 ## Environment Variables
 
 See `server/.env.example` for the full list of required environment variables.
+
+## Completion Criteria
+
+The project is considered complete when all of the following are true:
+
+- All core modules are usable end-to-end: Auth/RBAC, Vehicles, Drivers, Orders, Advertisements, Reviews, Notifications, Tracking, Reports.
+- Demo readiness: app starts locally (`server` + `client`), critical user flows can be exercised without manual code edits.
+- Production readiness baseline: environment variables are documented, security middleware is enabled, and error handling is centralized.
+- Test/build baseline is green:
+  - `cd server && npm test`
+  - `cd client && npm run build`
+- Coverage target: maintain and improve from current backend unit/integration baseline (no decrease in covered critical auth/middleware/model paths).
+
+## Core Flow Verification Checklist (Manual E2E)
+
+Run through these flows before release:
+
+- Auth: register, login, forgot/reset password, role-restricted route protection.
+- Vehicles/Drivers: create/update records, assign driver to vehicle, verify list/detail views.
+- Orders lifecycle: create order → payment/approval/rejection paths → assignment → in-progress → completion.
+- Advertisements: create/list/filter/detail plus moderation actions (approve/reject).
+- Notifications: unread count, mark as read, mark all as read, delete.
+- Tracking: driver/location updates and active vehicle/history views.
+- Reports: dashboard stats and export endpoints (PDF/CSV/Excel).
+
+## Environment & Data Consistency
+
+- Keep backend environment aligned across local/staging/prod using `server/.env.example` as the source template.
+- Use realistic test data in MongoDB for demo/E2E runs (admin, owner, driver, customer users; sample vehicles; orders in different statuses).
+- Before demos, verify `CLIENT_URL`, `MONGO_URI`, `JWT_SECRET`, and SMTP settings are configured correctly.
+
+## Deployment Notes
+
+- Build frontend: `cd client && npm run build`
+- Start backend API: `cd server && npm start`
+- Ensure reverse proxy serves `client/dist` and forwards `/api/v1/*` + Socket.io traffic to backend.
+- Set secure production values for secrets and SMTP credentials; do not commit real credentials.

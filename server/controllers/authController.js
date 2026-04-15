@@ -4,7 +4,7 @@ const sendEmail = require('../utils/sendEmail');
 
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
-
+ 
 // Helper: create token and send response
 const sendTokenResponse = (user, statusCode, res) => {
   const token = user.getSignedJwtToken();
