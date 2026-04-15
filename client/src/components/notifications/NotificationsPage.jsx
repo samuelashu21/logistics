@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useSocket } from '../../context/SocketContext';
+import { useSocket } from '../../context/useSocket.jsx';
 import {
   getNotifications,
   markAsRead,
