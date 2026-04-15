@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { useSocket } from '../../context/SocketContext.jsx';
+import { useSocket } from '../../context/useSocket.jsx';
 import { getUnreadCount } from '../../services/api.js';
 
 export default function Navbar({ onToggleSidebar }) {
