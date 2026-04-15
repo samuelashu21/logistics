@@ -1,3 +1,1 @@
-export default function ProfilePage() {
-  return <div className="page-header"><h1>Profile</h1></div>;
-}
+export { default } from '../components/auth/ProfilePage';
