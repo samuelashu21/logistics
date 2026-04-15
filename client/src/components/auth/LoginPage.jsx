@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 export default function LoginPage() {
   const { login, isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
   const [submitting, setSubmitting] = useState(false);
 
@@ -16,7 +17,11 @@ export default function LoginPage() {
     );
   }
 
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -31,6 +36,7 @@ export default function LoginPage() {
     try {
       await login(form.email, form.password);
       toast.success('Logged in successfully');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       const msg =
         err.response?.data?.message || err.response?.data?.error || 'Login failed';

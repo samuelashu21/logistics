@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
 
@@ -7,6 +7,7 @@ const ROLES = ['customer', 'owner', 'driver'];
 
 export default function RegisterPage() {
   const { register, isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -25,7 +26,11 @@ export default function RegisterPage() {
     );
   }
 
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -51,6 +56,7 @@ export default function RegisterPage() {
     try {
       await register({ name, email, password, role, phone });
       toast.success('Registration successful');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       const msg =
         err.response?.data?.message || err.response?.data?.error || 'Registration failed';
