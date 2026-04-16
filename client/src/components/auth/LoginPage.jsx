@@ -9,13 +9,6 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [submitting, setSubmitting] = useState(false);
 
-  console.log('[LOGIN RENDER]', {
-    loading,
-    isAuthenticated,
-    path: window.location.pathname,
-    token: localStorage.getItem('token'),
-  });
-
   if (loading) return <div className="spinner-container"><div className="spinner" /></div>;
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
@@ -29,28 +22,17 @@ export default function LoginPage() {
       return;
     }
 
-    console.log('[LOGIN] submit start');
     setSubmitting(true);
 
     try {
-      const result = await login(form.email, form.password);
-      console.log('[LOGIN] login() result:', result);
-      console.log('[LOGIN] token in localStorage:', localStorage.getItem('token'));
+      await login(form.email, form.password);
 
       toast.success('Logged in successfully');
-
-      console.log('[LOGIN] navigating to /dashboard');
       navigate('/dashboard', { replace: true });
-
-      setTimeout(() => {
-        console.log('[LOGIN] current path after navigate:', window.location.pathname);
-      }, 300);
     } catch (err) {
-      console.log('[LOGIN] error object:', err);
       toast.error(err.response?.data?.error || err.message || 'Login failed');
     } finally {
       setSubmitting(false);
-      console.log('[LOGIN] submit end');
     }
   };
 
