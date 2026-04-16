@@ -48,7 +48,7 @@ export default function LoginPage() {
           <p style={{ marginTop: '0.25rem', fontSize: '0.875rem', opacity: 0.9 }}>
             Welcome back to Logistics MS
           </p>
-        </div>
+        </div> 
         <div className="card-body">
           <form onSubmit={handleSubmit}>
             <div className="form-group">

@@ -8,7 +8,7 @@ const ROLES = ['customer', 'owner', 'driver'];
 export default function RegisterPage() {
   const { register, isAuthenticated, loading } = useAuth();
   const [form, setForm] = useState({
-    name: '',
+    name: '', 
     email: '',
     password: '',
     confirmPassword: '',

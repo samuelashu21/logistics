@@ -12,6 +12,34 @@ function decodeToken(token) {
   }
 }
 
+function isUserObjectWithoutWrapper(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
+  return !('token' in data) && !('user' in data);
+}
+
+function extractAuthPayload(responseData) {
+  const root = responseData || {};
+  const data = root.data && typeof root.data === 'object' ? root.data : null;
+  const token = root.token || data?.token || null;
+  let user = root.user || data?.user || null;
+
+  if (!user && token && isUserObjectWithoutWrapper(data)) {
+    user = data;
+  }
+
+  if (!user && token) {
+    const decoded = decodeToken(token);
+    if (decoded) {
+      console.warn(
+        'Auth response missing user payload; falling back to JWT claims. Consider returning user data from auth endpoints.'
+      );
+      user = decoded;
+    }
+  }
+
+  return { token, user };
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -65,8 +93,11 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const res = await axios.post('/api/v1/auth/login', { email, password });
-    const { token: newToken } = res.data;
-    const userData = res.data.data || res.data.user;
+    const { token: newToken, user: userData } = extractAuthPayload(res.data);
+
+    if (!newToken) {
+      throw new Error('Authentication failed: No token received from server');
+    }
 
     localStorage.setItem('token', newToken);
     axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
@@ -78,8 +109,11 @@ export function AuthProvider({ children }) {
 
   const register = async (userData) => {
     const res = await axios.post('/api/v1/auth/register', userData);
-    const { token: newToken } = res.data;
-    const registeredUser = res.data.data || res.data.user;
+    const { token: newToken, user: registeredUser } = extractAuthPayload(res.data);
+
+    if (!newToken) {
+      throw new Error('Registration failed: No token received from server');
+    }
 
     localStorage.setItem('token', newToken);
     axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
@@ -110,4 +144,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+}  
