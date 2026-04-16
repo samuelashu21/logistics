@@ -12,23 +12,19 @@ function decodeToken(token) {
   }
 }
 
-function isLikelyUserObject(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
-  return ['_id', 'id', 'email', 'name', 'role'].some((key) => key in value);
-}
-
 function extractAuthPayload(responseData) {
   const root = responseData || {};
-  const data = root.data || {};
-  const token = root.token || data.token;
-  const rootUser = isLikelyUserObject(root.user) ? root.user : null;
-  const dataUser = isLikelyUserObject(data.user) ? data.user : null;
-  const dataAsUser = root.token && isLikelyUserObject(data) ? data : null;
-  const user =
-    rootUser ||
-    dataUser ||
-    dataAsUser ||
-    (token ? decodeToken(token) : null);
+  const data = root.data && typeof root.data === 'object' ? root.data : null;
+  const token = root.token || data?.token || null;
+  let user = root.user || data?.user || null;
+
+  if (!user && token && data && !('token' in data) && !('user' in data)) {
+    user = data;
+  }
+
+  if (!user && token) {
+    user = decodeToken(token);
+  }
 
   return { token, user };
 }
@@ -89,7 +85,7 @@ export function AuthProvider({ children }) {
     const { token: newToken, user: userData } = extractAuthPayload(res.data);
 
     if (!newToken) {
-      throw new Error('Invalid authentication response');
+      throw new Error('Authentication failed: No token received from server');
     }
 
     localStorage.setItem('token', newToken);
@@ -105,7 +101,7 @@ export function AuthProvider({ children }) {
     const { token: newToken, user: registeredUser } = extractAuthPayload(res.data);
 
     if (!newToken) {
-      throw new Error('Invalid authentication response');
+      throw new Error('Registration failed: No token received from server');
     }
 
     localStorage.setItem('token', newToken);
