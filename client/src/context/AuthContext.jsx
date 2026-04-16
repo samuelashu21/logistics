@@ -12,14 +12,22 @@ function decodeToken(token) {
   }
 }
 
+function isLikelyUserObject(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  return ['_id', 'id', 'email', 'name', 'role'].some((key) => key in value);
+}
+
 function extractAuthPayload(responseData) {
   const root = responseData || {};
   const data = root.data || {};
   const token = root.token || data.token;
+  const rootUser = isLikelyUserObject(root.user) ? root.user : null;
+  const dataUser = isLikelyUserObject(data.user) ? data.user : null;
+  const dataAsUser = root.token && isLikelyUserObject(data) ? data : null;
   const user =
-    root.user ||
-    data.user ||
-    (root.token ? data : null) ||
+    rootUser ||
+    dataUser ||
+    dataAsUser ||
     (token ? decodeToken(token) : null);
 
   return { token, user };
