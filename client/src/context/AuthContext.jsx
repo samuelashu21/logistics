@@ -12,18 +12,27 @@ function decodeToken(token) {
   }
 }
 
+function isDirectUserPayload(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
+  return !('token' in data) && !('user' in data);
+}
+
 function extractAuthPayload(responseData) {
   const root = responseData || {};
   const data = root.data && typeof root.data === 'object' ? root.data : null;
   const token = root.token || data?.token || null;
   let user = root.user || data?.user || null;
 
-  if (!user && token && data && !('token' in data) && !('user' in data)) {
+  if (!user && token && isDirectUserPayload(data)) {
     user = data;
   }
 
   if (!user && token) {
-    user = decodeToken(token);
+    const decoded = decodeToken(token);
+    if (decoded) {
+      console.warn('Auth response missing user payload; falling back to JWT claims');
+      user = decoded;
+    }
   }
 
   return { token, user };
