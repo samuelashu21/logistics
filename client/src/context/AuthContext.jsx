@@ -12,19 +12,20 @@ function decodeToken(token) {
   }
 }
 
+function pickFirstValue(source, keys) {
+  for (const key of keys) {
+    if (source?.[key]) return source[key];
+  }
+  return null;
+}
+
 // Universal extractor for varying backend response shapes
 function extractAuthPayload(responseData) {
+  const tokenFields = ['token', 'accessToken', 'jwt'];
   const token =
-    responseData?.token ||
-    responseData?.accessToken ||
-    responseData?.jwt ||
-    responseData?.data?.token ||
-    responseData?.data?.accessToken ||
-    responseData?.data?.jwt ||
-    responseData?.data?.data?.token ||
-    responseData?.data?.data?.accessToken ||
-    responseData?.data?.data?.jwt ||
-    null;
+    pickFirstValue(responseData, tokenFields) ||
+    pickFirstValue(responseData?.data, tokenFields) ||
+    pickFirstValue(responseData?.data?.data, tokenFields);
 
   // Prefer explicit user objects first
   let user =
@@ -88,16 +89,14 @@ export function AuthProvider({ children }) {
         setUser(res?.data?.data || res?.data?.user || null);
       } catch (err) {
         console.error('[AUTH] /me failed:', err?.message);
-        localStorage.removeItem('token');
-        setToken(null);
-        setUser(null);
+        logout();
       } finally {
         setLoading(false);
       }
     };
 
     loadUser();
-  }, [token]);
+  }, [token, logout]);
 
   const login = async (email, password) => {
     const res = await loginRequest({ email, password });
