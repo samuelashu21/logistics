@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 export default function LoginPage() {
   const { login, isAuthenticated, loading } = useAuth();
-  const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
   const [submitting, setSubmitting] = useState(false);
 
@@ -38,13 +37,6 @@ export default function LoginPage() {
       console.log('[LOGIN] token in localStorage:', localStorage.getItem('token'));
 
       toast.success('Logged in successfully');
-
-      console.log('[LOGIN] navigating to /dashboard');
-      navigate('/dashboard', { replace: true });
-
-      setTimeout(() => {
-        console.log('[LOGIN] current path after navigate:', window.location.pathname);
-      }, 300);
     } catch (err) {
       console.log('[LOGIN] error object:', err);
       toast.error(err.response?.data?.error || err.message || 'Login failed');
@@ -113,4 +105,4 @@ export default function LoginPage() {
       </div>
     </div>
   );
-}
+} 

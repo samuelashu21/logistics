@@ -22,9 +22,6 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
     }
     return Promise.reject(error);
   }
@@ -127,4 +124,4 @@ export const getCustomerReport = (params) =>
 export const getRevenueReport = (params) =>
   api.get('/reports/revenue', { params });
 export const exportReport = (type, params) =>
-  api.get(`/reports/export/${type}`, { params, responseType: 'blob' });
+  api.get(`/reports/export/${type}`, { params, responseType: 'blob' }); 
