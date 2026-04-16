@@ -12,6 +12,19 @@ function decodeToken(token) {
   }
 }
 
+function extractAuthPayload(responseData) {
+  const root = responseData || {};
+  const data = root.data || {};
+  const token = root.token || data.token;
+  const user =
+    root.user ||
+    data.user ||
+    (root.token ? data : null) ||
+    (token ? decodeToken(token) : null);
+
+  return { token, user };
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -65,8 +78,11 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const res = await axios.post('/api/v1/auth/login', { email, password });
-    const { token: newToken } = res.data;
-    const userData = res.data.data || res.data.user;
+    const { token: newToken, user: userData } = extractAuthPayload(res.data);
+
+    if (!newToken) {
+      throw new Error('Invalid authentication response');
+    }
 
     localStorage.setItem('token', newToken);
     axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
@@ -78,8 +94,11 @@ export function AuthProvider({ children }) {
 
   const register = async (userData) => {
     const res = await axios.post('/api/v1/auth/register', userData);
-    const { token: newToken } = res.data;
-    const registeredUser = res.data.data || res.data.user;
+    const { token: newToken, user: registeredUser } = extractAuthPayload(res.data);
+
+    if (!newToken) {
+      throw new Error('Invalid authentication response');
+    }
 
     localStorage.setItem('token', newToken);
     axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
