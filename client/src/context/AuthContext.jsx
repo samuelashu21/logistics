@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { login as loginRequest, register as registerRequest, getMe } from '../services/api.js';
 
 const AuthContext = createContext(null);
+const TOKEN_FIELDS = ['token', 'accessToken', 'jwt'];
 
 function decodeToken(token) {
   try {
@@ -21,11 +22,10 @@ function pickFirstValue(source, keys) {
 
 // Universal extractor for varying backend response shapes
 function extractAuthPayload(responseData) {
-  const tokenFields = ['token', 'accessToken', 'jwt'];
   const token =
-    pickFirstValue(responseData, tokenFields) ||
-    pickFirstValue(responseData?.data, tokenFields) ||
-    pickFirstValue(responseData?.data?.data, tokenFields);
+    pickFirstValue(responseData, TOKEN_FIELDS) ||
+    pickFirstValue(responseData?.data, TOKEN_FIELDS) ||
+    pickFirstValue(responseData?.data?.data, TOKEN_FIELDS);
 
   // Prefer explicit user objects first
   let user =
