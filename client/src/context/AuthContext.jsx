@@ -12,7 +12,7 @@ function decodeToken(token) {
   }
 }
 
-function isDirectUserPayload(data) {
+function isUserObjectWithoutWrapper(data) {
   if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
   return !('token' in data) && !('user' in data);
 }
@@ -23,14 +23,16 @@ function extractAuthPayload(responseData) {
   const token = root.token || data?.token || null;
   let user = root.user || data?.user || null;
 
-  if (!user && token && isDirectUserPayload(data)) {
+  if (!user && token && isUserObjectWithoutWrapper(data)) {
     user = data;
   }
 
   if (!user && token) {
     const decoded = decodeToken(token);
     if (decoded) {
-      console.warn('Auth response missing user payload; falling back to JWT claims');
+      console.warn(
+        'Auth response missing user payload; falling back to JWT claims. Consider returning user data from auth endpoints.'
+      );
       user = decoded;
     }
   }
