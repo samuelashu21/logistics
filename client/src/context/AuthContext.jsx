@@ -87,6 +87,7 @@ export function AuthProvider({ children }) {
         const res = await getMe();
         setUser(res?.data?.data || res?.data?.user || null);
       } catch (err) {
+        console.error('[AUTH] /me failed:', err?.message);
         localStorage.removeItem('token');
         setToken(null);
         setUser(null);
