@@ -53,12 +53,16 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
-  const logout = useCallback(() => {
+  const clearAuthState = useCallback(() => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
-    setLoading(false);
   }, []);
+
+  const logout = useCallback(() => {
+    clearAuthState();
+    setLoading(false);
+  }, [clearAuthState]);
 
   useEffect(() => {
     if (!token) return;
@@ -89,14 +93,14 @@ export function AuthProvider({ children }) {
         setUser(res?.data?.data || res?.data?.user || null);
       } catch (err) {
         console.error('[AUTH] /me failed:', err?.message);
-        logout();
+        clearAuthState();
       } finally {
         setLoading(false);
       }
     };
 
     loadUser();
-  }, [token, logout]);
+  }, [token, clearAuthState]);
 
   const login = async (email, password) => {
     const res = await loginRequest({ email, password });
