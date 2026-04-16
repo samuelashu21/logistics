@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
 
@@ -7,8 +7,9 @@ const ROLES = ['customer', 'owner', 'driver'];
 
 export default function RegisterPage() {
   const { register, isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState({
-    name: '', 
+    name: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -17,14 +18,7 @@ export default function RegisterPage() {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  if (loading) {
-    return (
-      <div className="spinner-container">
-        <div className="spinner" />
-      </div>
-    );
-  }
-
+  if (loading) return <div className="spinner-container"><div className="spinner" /></div>;
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   const handleChange = (e) =>
@@ -34,27 +28,17 @@ export default function RegisterPage() {
     e.preventDefault();
     const { name, email, password, confirmPassword, role, phone } = form;
 
-    if (!name || !email || !password || !confirmPassword) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-    if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
-
+    if (!name || !email || !password || !confirmPassword) return toast.error('Please fill in all required fields');
+    if (password !== confirmPassword) return toast.error('Passwords do not match');
+    if (password.length < 6) return toast.error('Password must be at least 6 characters');
+ 
     setSubmitting(true);
     try {
       await register({ name, email, password, role, phone });
       toast.success('Registration successful');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
-      const msg =
-        err.response?.data?.message || err.response?.data?.error || 'Registration failed';
-      toast.error(msg);
+      toast.error(err.response?.data?.error || err.message || 'Registration failed');
     } finally {
       setSubmitting(false);
     }

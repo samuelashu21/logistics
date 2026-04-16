@@ -1,21 +1,22 @@
 import { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 export default function LoginPage() {
   const { login, isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
   const [submitting, setSubmitting] = useState(false);
 
-  if (loading) {
-    return (
-      <div className="spinner-container">
-        <div className="spinner" />
-      </div>
-    );
-  }
+  console.log('[LOGIN RENDER]', {
+    loading,
+    isAuthenticated,
+    path: window.location.pathname,
+    token: localStorage.getItem('token'),
+  });
 
+  if (loading) return <div className="spinner-container"><div className="spinner" /></div>;
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   const handleChange = (e) =>
@@ -27,16 +28,29 @@ export default function LoginPage() {
       toast.error('Please fill in all fields');
       return;
     }
+
+    console.log('[LOGIN] submit start');
     setSubmitting(true);
+
     try {
-      await login(form.email, form.password);
+      const result = await login(form.email, form.password);
+      console.log('[LOGIN] login() result:', result);
+      console.log('[LOGIN] token in localStorage:', localStorage.getItem('token'));
+
       toast.success('Logged in successfully');
+
+      console.log('[LOGIN] navigating to /dashboard');
+      navigate('/dashboard', { replace: true });
+
+      setTimeout(() => {
+        console.log('[LOGIN] current path after navigate:', window.location.pathname);
+      }, 300);
     } catch (err) {
-      const msg =
-        err.response?.data?.message || err.response?.data?.error || 'Login failed';
-      toast.error(msg);
+      console.log('[LOGIN] error object:', err);
+      toast.error(err.response?.data?.error || err.message || 'Login failed');
     } finally {
       setSubmitting(false);
+      console.log('[LOGIN] submit end');
     }
   };
 
@@ -48,7 +62,7 @@ export default function LoginPage() {
           <p style={{ marginTop: '0.25rem', fontSize: '0.875rem', opacity: 0.9 }}>
             Welcome back to Logistics MS
           </p>
-        </div> 
+        </div>
         <div className="card-body">
           <form onSubmit={handleSubmit}>
             <div className="form-group">

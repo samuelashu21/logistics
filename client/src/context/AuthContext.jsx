@@ -12,29 +12,30 @@ function decodeToken(token) {
   }
 }
 
-function isUserObjectWithoutWrapper(data) {
-  if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
-  return !('token' in data) && !('user' in data);
-}
-
+// Universal extractor for varying backend response shapes
 function extractAuthPayload(responseData) {
-  const root = responseData || {};
-  const data = root.data && typeof root.data === 'object' ? root.data : null;
-  const token = root.token || data?.token || null;
-  let user = root.user || data?.user || null;
+  const token =
+    responseData?.token ||
+    responseData?.data?.token ||
+    responseData?.data?.data?.token ||
+    null;
 
-  if (!user && token && isUserObjectWithoutWrapper(data)) {
-    user = data;
+  // Prefer explicit user objects first
+  let user =
+    responseData?.user ||
+    responseData?.data?.user ||
+    responseData?.data?.data?.user ||
+    null;
+
+  // Common shape in your backend: { success, token, data: user }
+  if (!user && responseData?.data && typeof responseData.data === 'object' && !Array.isArray(responseData.data)) {
+    user = responseData.data;
   }
 
+  // JWT fallback
   if (!user && token) {
     const decoded = decodeToken(token);
-    if (decoded) {
-      console.warn(
-        'Auth response missing user payload; falling back to JWT claims. Consider returning user data from auth endpoints.'
-      );
-      user = decoded;
-    }
+    if (decoded) user = decoded;
   }
 
   return { token, user };
@@ -42,22 +43,22 @@ function extractAuthPayload(responseData) {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
   const logout = useCallback(() => {
     localStorage.removeItem('token');
-    delete axios.defaults.headers.common['Authorization'];
+    delete axios.defaults.headers.common.Authorization;
     setToken(null);
     setUser(null);
+    setLoading(false);
   }, []);
 
-  // Auto-logout timer based on token expiry
   useEffect(() => {
     if (!token) return;
 
     const decoded = decodeToken(token);
-    if (!decoded || !decoded.exp) return;
+    if (!decoded?.exp) return;
 
     const expiresIn = decoded.exp * 1000 - Date.now();
     if (expiresIn <= 0) {
@@ -69,7 +70,6 @@ export function AuthProvider({ children }) {
     return () => clearTimeout(timer);
   }, [token, logout]);
 
-  // On mount or token change, fetch current user
   useEffect(() => {
     const loadUser = async () => {
       if (!token) {
@@ -78,70 +78,77 @@ export function AuthProvider({ children }) {
       }
 
       try {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        setLoading(true);
+        axios.defaults.headers.common.Authorization = `Bearer ${token}`;
         const res = await axios.get('/api/v1/auth/me');
-        setUser(res.data.data || res.data.user || res.data);
-      } catch {
-        logout();
+        setUser(res?.data?.data || res?.data?.user || null);
+      } catch (err) {
+        console.error('[AUTH] /me failed:', err?.response?.status, err?.response?.data);
+        // keep token to avoid immediate bounce loops
+        setUser(null);
       } finally {
         setLoading(false);
       }
     };
 
     loadUser();
-  }, [token, logout]);
+  }, [token]);
 
   const login = async (email, password) => {
+    console.log('[AUTH] login start', { email });
+
     const res = await axios.post('/api/v1/auth/login', { email, password });
+    console.log('[AUTH] raw login response:', res.data);
+
     const { token: newToken, user: userData } = extractAuthPayload(res.data);
+    console.log('[AUTH] extracted:', { newToken, userData });
 
-    if (!newToken) {
-      throw new Error('Authentication failed: No token received from server');
-    }
+    if (!newToken) throw new Error('No token received');
 
     localStorage.setItem('token', newToken);
-    axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+    axios.defaults.headers.common.Authorization = `Bearer ${newToken}`;
     setToken(newToken);
-    setUser(userData);
+    setUser(userData || null);
+    setLoading(false);
 
+    console.log('[AUTH] token saved:', localStorage.getItem('token'));
     return res.data;
   };
 
-  const register = async (userData) => {
-    const res = await axios.post('/api/v1/auth/register', userData);
-    const { token: newToken, user: registeredUser } = extractAuthPayload(res.data);
+  const register = async (payload) => {
+    console.log('[AUTH] register start');
 
-    if (!newToken) {
-      throw new Error('Registration failed: No token received from server');
-    }
+    const res = await axios.post('/api/v1/auth/register', payload);
+    console.log('[AUTH] raw register response:', res.data);
+
+    const { token: newToken, user: newUser } = extractAuthPayload(res.data);
+    console.log('[AUTH] extracted register:', { newToken, newUser });
+
+    if (!newToken) throw new Error('No token received');
 
     localStorage.setItem('token', newToken);
-    axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+    axios.defaults.headers.common.Authorization = `Bearer ${newToken}`;
     setToken(newToken);
-    setUser(registeredUser);
+    setUser(newUser || null);
+    setLoading(false);
 
+    console.log('[AUTH] token saved after register:', localStorage.getItem('token'));
     return res.data;
   };
 
-  const isAuthenticated = !!token && !!user;
+  const isAuthenticated = !!token;
 
-  const value = {
-    user,
-    token,
-    loading,
-    login,
-    register,
-    logout,
-    isAuthenticated,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{ user, token, loading, login, register, logout, isAuthenticated }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}  
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  return ctx;
+}
