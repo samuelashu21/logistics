@@ -62,6 +62,7 @@ export default function App() {
           <Route element={<PrivateRoute roles={['admin', 'owner']} />}>
             <Route element={<Layout />}>
               <Route path="/drivers" element={<DriverListPage />} />
+              <Route path="/drivers/:id" element={<DriverDetailPage />} />
               <Route path="/tracking" element={<TrackingPage />} />
             </Route>
           </Route>

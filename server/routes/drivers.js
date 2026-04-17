@@ -8,7 +8,7 @@ const {
   getDriverByUser,
 } = require('../controllers/driverController');
 const { protect, authorize } = require('../middleware/auth');
-
+ 
 const router = express.Router();
 
 // Must be before /:id to avoid matching "user" as an id

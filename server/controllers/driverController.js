@@ -1,3 +1,4 @@
+const mongoose = require('mongoose'); // IMPORT MONGOOSE
 const Driver = require('../models/Driver');
 const User = require('../models/User');
 
@@ -31,6 +32,14 @@ exports.getDrivers = asyncHandler(async (req, res) => {
 // @desc    Get single driver
 // @route   GET /api/v1/drivers/:id
 exports.getDriver = asyncHandler(async (req, res) => {
+  // 1. Validate ObjectId format
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid ID format',
+    });
+  }
+
   const driver = await Driver.findById(req.params.id)
     .populate('user', 'name email phone')
     .populate('assignedVehicle', 'make model year licensePlate');
@@ -53,10 +62,10 @@ exports.getDriver = asyncHandler(async (req, res) => {
 exports.createDriver = asyncHandler(async (req, res) => {
   const { user: userId } = req.body;
 
-  if (!userId) {
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).json({
       success: false,
-      error: 'Please provide a user ID',
+      error: 'Please provide a valid user ID',
     });
   }
 
@@ -96,45 +105,45 @@ exports.createDriver = asyncHandler(async (req, res) => {
 // @desc    Update driver
 // @route   PUT /api/v1/drivers/:id
 exports.updateDriver = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ success: false, error: 'Invalid ID' });
+  }
+
   const driver = await Driver.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
     runValidators: true,
   });
 
   if (!driver) {
-    return res.status(404).json({
-      success: false,
-      error: 'Driver not found',
-    });
+    return res.status(404).json({ success: false, error: 'Driver not found' });
   }
 
-  res.status(200).json({
-    success: true,
-    data: driver,
-  });
+  res.status(200).json({ success: true, data: driver });
 });
 
 // @desc    Delete driver
 // @route   DELETE /api/v1/drivers/:id
 exports.deleteDriver = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ success: false, error: 'Invalid ID' });
+  }
+
   const driver = await Driver.findByIdAndDelete(req.params.id);
 
   if (!driver) {
-    return res.status(404).json({
-      success: false,
-      error: 'Driver not found',
-    });
+    return res.status(404).json({ success: false, error: 'Driver not found' });
   }
 
-  res.status(200).json({
-    success: true,
-    data: {},
-  });
+  res.status(200).json({ success: true, data: {} });
 });
 
 // @desc    Get driver profile by user ID
 // @route   GET /api/v1/drivers/user/:userId
 exports.getDriverByUser = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.userId)) {
+    return res.status(400).json({ success: false, error: 'Invalid User ID' });
+  }
+
   const driver = await Driver.findOne({ user: req.params.userId })
     .populate('user', 'name email phone')
     .populate('assignedVehicle', 'make model year licensePlate');
@@ -146,8 +155,5 @@ exports.getDriverByUser = asyncHandler(async (req, res) => {
     });
   }
 
-  res.status(200).json({
-    success: true,
-    data: driver,
-  });
-});
+  res.status(200).json({ success: true, data: driver });
+}); 
