@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useContext, useState, useEffect, useCallback } from 'react';
 import { login as loginRequest, register as registerRequest, getMe } from '../services/api.js';
+import { AuthContext } from './AuthContextValue.js';
 
-const AuthContext = createContext(null);
 const TOKEN_FIELDS = ['token', 'accessToken', 'jwt'];
 
 function decodeToken(token) {
