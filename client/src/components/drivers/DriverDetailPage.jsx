@@ -215,8 +215,8 @@ const DriverDetailPage = () => {
         )}
       </div>
 
-      {error && <div className="alert alert-danger mb-2">{error}</div>}
-      {success && <div className="alert alert-success mb-2">{success}</div>}
+      {error && <div className="alert alert-danger mb-2" role="alert">{error}</div>}
+      {success && <div className="alert alert-success mb-2" role="status">{success}</div>}
 
       <div className="grid grid-2 gap-2">
         {/* Profile Card */}
