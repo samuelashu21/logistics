@@ -32,7 +32,7 @@ export function AuthProvider({ children }) {
       setUser(userData);
       return userData;
     }
-    throw new Error('Invalid user data');
+    throw new Error('Failed to fetch user data from server');
   }, []);
 
   const clearAuthState = useCallback(() => {
@@ -103,8 +103,9 @@ export function AuthProvider({ children }) {
     const userData = res.data?.data || null;
     if (userData) {
       setUser(userData);
+      return res.data;
     }
-    return res.data;
+    throw new Error('Failed to fetch updated profile data from server');
   };
 
   const changePassword = async (currentPassword, newPassword) => {

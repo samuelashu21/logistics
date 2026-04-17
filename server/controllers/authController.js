@@ -99,10 +99,17 @@ exports.updateMe = asyncHandler(async (req, res) => {
     }
   });
 
-  const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
+  const user = await User.findByIdAndUpdate(req.user._id, fieldsToUpdate, {
     new: true,
     runValidators: true,
   });
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      error: 'User not found',
+    });
+  }
 
   res.status(200).json({
     success: true,
@@ -122,7 +129,14 @@ exports.changePassword = asyncHandler(async (req, res) => {
     });
   }
 
-  const user = await User.findById(req.user.id).select('+password');
+  const user = await User.findById(req.user._id).select('+password');
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      error: 'User not found',
+    });
+  }
 
   const isMatch = await user.matchPassword(currentPassword);
 
