@@ -1,4 +1,5 @@
 // controllers/vehicleController.js
+const mongoose = require('mongoose');
 const Vehicle = require('../models/Vehicle');
 const Driver = require('../models/Driver');
 
@@ -24,8 +25,16 @@ exports.getVehicles = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, total, data: vehicles });
 });
 
-// @desc    Get single vehicle (WAS MISSING)
+// @desc    Get single vehicle
 exports.getVehicle = asyncHandler(async (req, res) => {
+  // FIX: Prevent CastError by validating ID format
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ 
+      success: false, 
+      error: `Invalid ID format: ${req.params.id}` 
+    });
+  }
+
   const vehicle = await Vehicle.findById(req.params.id)
     .populate('owner', 'name email')
     .populate('assignedDriver', 'name email');
@@ -46,9 +55,14 @@ exports.createVehicle = asyncHandler(async (req, res) => {
 
 // @desc    Update vehicle
 exports.updateVehicle = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ success: false, error: 'Invalid ID format' });
+  }
+
   let vehicle = await Vehicle.findById(req.params.id);
   if (!vehicle) return res.status(404).json({ success: false, error: 'Not found' });
 
+  // Authorization check
   if (vehicle.owner.toString() !== req.user.id && req.user.role !== 'admin') {
     return res.status(403).json({ success: false, error: 'Not authorized' });
   }
@@ -63,6 +77,10 @@ exports.updateVehicle = asyncHandler(async (req, res) => {
 
 // @desc    Delete vehicle
 exports.deleteVehicle = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ success: false, error: 'Invalid ID format' });
+  }
+
   const vehicle = await Vehicle.findById(req.params.id);
   if (!vehicle) return res.status(404).json({ success: false, error: 'Not found' });
 
@@ -74,12 +92,12 @@ exports.deleteVehicle = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data: {} });
 });
 
-// @desc    Assign driver to vehicle (WAS MISSING)
+// @desc    Assign driver to vehicle
 exports.assignDriver = asyncHandler(async (req, res) => {
   const { driverId } = req.body;
 
-  if (!driverId) {
-    return res.status(400).json({ success: false, error: 'Please provide a driverId' });
+  if (!driverId || !mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ success: false, error: 'Invalid ID or driverId' });
   }
 
   const vehicle = await Vehicle.findById(req.params.id);
