@@ -56,7 +56,7 @@ export default function App() {
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>
-          </Route>
+          </Route> 
 
           {/* Admin/Owner routes */}
           <Route element={<PrivateRoute roles={['admin', 'owner']} />}>

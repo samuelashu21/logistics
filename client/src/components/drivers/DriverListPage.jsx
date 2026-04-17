@@ -155,7 +155,7 @@ const DriverListPage = () => {
             )}
           </div>
           <Pagination
-            currentPage={page}
+            currentPage={page} 
             totalPages={totalPages}
             onPageChange={setPage}
           />

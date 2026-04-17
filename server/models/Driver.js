@@ -7,7 +7,7 @@ const DriverSchema = new mongoose.Schema({
     required: [true, 'Please add a user reference'],
     unique: true,
   },
-  licenseNumber: {
+  licenseNumber: { 
     type: String,
     required: [true, 'Please add a license number'],
     trim: true,

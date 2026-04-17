@@ -250,7 +250,7 @@ const DriverDetailPage = () => {
                 </div>
               </>
             )}
-          </div>
+          </div> 
         </div>
 
         {/* Vehicle Card */}
