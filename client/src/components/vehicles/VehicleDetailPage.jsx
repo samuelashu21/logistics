@@ -39,6 +39,7 @@ const orderStatusBadge = (status) => {
 };
 
 const VEHICLE_FORM_FIELDS = ['make', 'model', 'year', 'vin', 'licensePlate', 'color', 'capacity', 'type'];
+const formatFieldLabel = (field) => field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1');
 
 const VehicleDetailPage = () => {
   const { id } = useParams();
@@ -69,6 +70,7 @@ const VehicleDetailPage = () => {
 
   // Authorization check
   const canManage = user?.role === 'admin' || user?.role === 'owner';
+  const createUnauthorized = isCreateMode && !canManage;
 
   const fetchVehicle = useCallback(async () => {
     if (isCreateMode) {
@@ -123,14 +125,6 @@ const VehicleDetailPage = () => {
   useEffect(() => {
     fetchVehicle();
   }, [fetchVehicle]);
-
-  useEffect(() => {
-    if (isCreateMode && !canManage) {
-      setError('Not authorized to create vehicles');
-      return;
-    }
-    setError((prev) => (prev === 'Not authorized to create vehicles' ? '' : prev));
-  }, [isCreateMode, canManage]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -233,6 +227,7 @@ const VehicleDetailPage = () => {
       </div>
 
       {error && <div className="alert alert-danger mb-2">{error}</div>}
+      {createUnauthorized && <div className="alert alert-danger mb-2">Not authorized to create vehicles</div>}
       {success && <div className="alert alert-success mb-2">{success}</div>}
 
       {isCreateMode ? (
@@ -245,7 +240,7 @@ const VehicleDetailPage = () => {
               {VEHICLE_FORM_FIELDS.map((field) => (
                 <div className="form-group mb-2" key={field}>
                   <label className="form-label" htmlFor={`create-${field}`}>
-                    {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
+                    {formatFieldLabel(field)}
                   </label>
                   <input
                     id={`create-${field}`}
@@ -295,7 +290,7 @@ const VehicleDetailPage = () => {
                 {VEHICLE_FORM_FIELDS.map((field) => (
                   <div className="form-group mb-2" key={field}>
                     <label className="form-label" htmlFor={`edit-${field}`}>
-                      {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
+                      {formatFieldLabel(field)}
                     </label>
                     <input
                       id={`edit-${field}`}
