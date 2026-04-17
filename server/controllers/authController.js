@@ -57,7 +57,7 @@ exports.login = asyncHandler(async (req, res) => {
     });
   }
 
-  if (!user.isActive) {
+  if (!user.isActive) { 
     return res.status(403).json({
       success: false,
       error: 'Account has been suspended',
