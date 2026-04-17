@@ -70,7 +70,7 @@ exports.updateUser = asyncHandler(async (req, res) => {
 
   if (!user) {
     return res.status(404).json({
-      success: false,
+      success: false, 
       error: 'User not found',
     });
   }

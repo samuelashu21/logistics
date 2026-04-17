@@ -87,6 +87,104 @@ exports.getMe = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Update current logged-in user profile
+// @route   PUT /api/v1/auth/me
+exports.updateMe = asyncHandler(async (req, res) => {
+  const allowedFields = ['name', 'phone', 'address'];
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      error: 'User account no longer exists',
+    });
+  }
+
+  for (const field of allowedFields) {
+    if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+      const value = req.body[field];
+
+      if (typeof value !== 'string') {
+        return res.status(400).json({
+          success: false,
+          error: `${field} must be a string`,
+        });
+      }
+
+      const normalizedValue = value.trim();
+
+      if (field === 'name' && !normalizedValue) {
+        return res.status(400).json({
+          success: false,
+          error: 'Name is required',
+        });
+      }
+
+      user[field] = normalizedValue;
+    }
+  }
+
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    data: user,
+  });
+});
+
+// @desc    Change current logged-in user password
+// @route   PUT /api/v1/auth/change-password
+exports.changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({
+      success: false,
+      error: 'Please provide currentPassword and newPassword',
+    });
+  }
+
+  if (typeof newPassword !== 'string') {
+    return res.status(400).json({
+      success: false,
+      error: 'New password must be a string',
+    });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({
+      success: false,
+      error: 'New password must be at least 6 characters',
+    });
+  }
+
+  const user = await User.findById(req.user._id).select('+password');
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      error: 'User account no longer exists',
+    });
+  }
+
+  const isMatch = await user.matchPassword(currentPassword);
+
+  if (!isMatch) {
+    return res.status(401).json({
+      success: false,
+      error: 'Current password is incorrect',
+    });
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    data: 'Password updated successfully',
+  });
+});
+
 // @desc    Forgot password
 // @route   POST /api/v1/auth/forgot-password
 exports.forgotPassword = asyncHandler(async (req, res) => {
@@ -171,4 +269,4 @@ exports.logout = asyncHandler(async (req, res) => {
     success: true,
     data: 'User logged out successfully',
   });
-});
+}); 

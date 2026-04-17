@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { login as loginRequest, register as registerRequest, getMe } from '../services/api.js';
+import {
+  login as loginRequest,
+  register as registerRequest,
+  getMe,
+  updateMe as updateMeRequest,
+  changePassword as changePasswordRequest,
+} from '../services/api.js';
 import { AuthContext } from './AuthContextValue.js';
 
 /**
@@ -18,6 +24,16 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
+
+  const refreshUser = useCallback(async () => {
+    const res = await getMe();
+    const userData = res.data?.data || null;
+    if (userData) {
+      setUser(userData);
+      return userData;
+    }
+    throw new Error('Failed to retrieve user data from server response');
+  }, []);
 
   const clearAuthState = useCallback(() => {
     localStorage.removeItem('token');
@@ -40,14 +56,7 @@ export function AuthProvider({ children }) {
       }
 
       try {
-        const res = await getMe();
-        // Backend /me returns { success: true, data: user }
-        const userData = res.data?.data || null;
-        if (userData) {
-          setUser(userData);
-        } else {
-          clearAuthState();
-        }
+        await refreshUser();
       } catch (err) {
         console.error('[AUTH ERROR] Validation failed:', err.message);
         clearAuthState();
@@ -56,7 +65,7 @@ export function AuthProvider({ children }) {
       }
     };
     initAuth();
-  }, [clearAuthState]);
+  }, [clearAuthState, refreshUser]);
 
   const login = async (email, password) => {
     const res = await loginRequest({ email, password });
@@ -89,12 +98,30 @@ export function AuthProvider({ children }) {
     return res.data;
   };
 
+  const updateProfile = async (payload) => {
+    const res = await updateMeRequest(payload);
+    const userData = res.data?.data || null;
+    if (userData) {
+      setUser(userData);
+      return res.data;
+    }
+    throw new Error('Failed to retrieve updated profile data from server response');
+  };
+
+  const changePassword = async (currentPassword, newPassword) => {
+    const res = await changePasswordRequest({ currentPassword, newPassword });
+    return res.data;
+  };
+
   const value = {
     user,
     token,
     loading,
     login,
     register,
+    refreshUser,
+    updateProfile,
+    changePassword,
     logout,
     isAuthenticated: !!token && !!user
   };
@@ -112,4 +139,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+} 
