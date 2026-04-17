@@ -98,7 +98,7 @@ const DriverDetailPage = () => {
     if (isCreateMode) {
       setLoading(true);
       if (!canCreateDriver) {
-        setError('Only admins can add drivers.');
+        setError('Only admins can create drivers.');
         setLoading(false);
         return;
       }
