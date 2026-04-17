@@ -46,7 +46,6 @@ const DriverDetailPage = () => {
   
   const isCreateMode = id === 'new';
   const canManage = authUser?.role === 'admin' || authUser?.role === 'owner';
-  const canViewUserList = canManage;
 
   const [driver, setDriver] = useState(null);
   const [trips, setTrips] = useState([]);
@@ -71,7 +70,7 @@ const DriverDetailPage = () => {
 
   // 1. Defensively fetch users (handles the 403 Forbidden error)
   const fetchDriverUsers = useCallback(async () => {
-    if (!canViewUserList) {
+    if (!canManage) {
       setDriverUsers([]);
       return;
     }
@@ -83,7 +82,7 @@ const DriverDetailPage = () => {
       console.warn('Failed to load driver user accounts.', err?.response?.status || err?.message);
       setDriverUsers([]); 
     }
-  }, [canViewUserList]);
+  }, [canManage]);
 
   const fetchDriverData = useCallback(async () => {
     console.log("DEBUG: Fetching Driver with ID:", id);
@@ -227,8 +226,8 @@ const DriverDetailPage = () => {
                         <option key={u._id} value={u._id}>{u.name} ({u.email})</option>
                       ))}
                     </select>
-                    {!canViewUserList && <small className="text-danger">You do not have permission to view user accounts for driver creation.</small>}
-                    {canViewUserList && driverUsers.length === 0 && <small className="text-danger">No eligible user accounts found.</small>}
+                    {!canManage && <small className="text-danger">You do not have permission to view user accounts for driver creation.</small>}
+                    {canManage && driverUsers.length === 0 && <small className="text-danger">No eligible user accounts found.</small>}
                   </div>
                 )}
                 <div className="form-group mb-2">
