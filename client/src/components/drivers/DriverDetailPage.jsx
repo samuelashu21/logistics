@@ -68,7 +68,7 @@ const DriverDetailPage = () => {
   const fetchDriverUsers = useCallback(async () => {
     if (!canManage) return;
     try {
-      const usersRes = await getUsers({ role: 'driver', limit: 100 });
+      const usersRes = await getUsers({ role: 'driver', limit: 1000 });
       setDriverUsers(usersRes.data.data || usersRes.data.users || []);
     } catch {
       setDriverUsers([]);
