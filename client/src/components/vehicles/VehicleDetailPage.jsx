@@ -70,7 +70,6 @@ const VehicleDetailPage = () => {
 
   // Authorization check
   const canManage = user?.role === 'admin' || user?.role === 'owner';
-  const createUnauthorized = isCreateMode && !canManage;
 
   const fetchVehicle = useCallback(async () => {
     if (isCreateMode) {
@@ -139,6 +138,7 @@ const VehicleDetailPage = () => {
         navigate(`/vehicles/${created._id}`);
         return;
       }
+      console.warn('Vehicle created without returned _id; redirecting to vehicle list.');
       navigate('/vehicles');
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to create vehicle');
@@ -227,7 +227,6 @@ const VehicleDetailPage = () => {
       </div>
 
       {error && <div className="alert alert-danger mb-2">{error}</div>}
-      {createUnauthorized && <div className="alert alert-danger mb-2">Not authorized to create vehicles</div>}
       {success && <div className="alert alert-success mb-2">{success}</div>}
 
       {isCreateMode ? (
