@@ -46,6 +46,7 @@ const DriverDetailPage = () => {
   
   const isCreateMode = id === 'new';
   const canManage = authUser?.role === 'admin' || authUser?.role === 'owner';
+  const canViewUserList = authUser?.role === 'admin';
 
   const [driver, setDriver] = useState(null);
   const [trips, setTrips] = useState([]);
@@ -70,17 +71,18 @@ const DriverDetailPage = () => {
 
   // 1. Defensively fetch users (handles the 403 Forbidden error)
   const fetchDriverUsers = useCallback(async () => {
-    if (!canManage) return;
+    if (!canViewUserList) {
+      setDriverUsers([]);
+      return;
+    }
     try {
       const res = await getUsers({ role: 'driver', limit: 1000 });
       const users = res.data?.data || res.data?.users || res.data || [];
       setDriverUsers(Array.isArray(users) ? users : []);
     } catch (err) {
-      // Log the 403 but don't break the UI
-      console.error("User list access denied (403). Only Admins can view the user list.");
       setDriverUsers([]); 
     }
-  }, [canManage]);
+  }, [canViewUserList]);
 
   const fetchDriverData = useCallback(async () => {
     console.log("DEBUG: Fetching Driver with ID:", id);
@@ -224,7 +226,8 @@ const DriverDetailPage = () => {
                         <option key={u._id} value={u._id}>{u.name} ({u.email})</option>
                       ))}
                     </select>
-                    {driverUsers.length === 0 && <small className="text-danger">No users found or permission denied.</small>}
+                    {!canViewUserList && <small className="text-danger">Only admins can view user accounts for driver creation.</small>}
+                    {canViewUserList && driverUsers.length === 0 && <small className="text-danger">No eligible user accounts found.</small>}
                   </div>
                 )}
                 <div className="form-group mb-2">
