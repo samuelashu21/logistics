@@ -32,7 +32,7 @@ export function AuthProvider({ children }) {
       setUser(userData);
       return userData;
     }
-    throw new Error('Failed to fetch user data from server');
+    throw new Error('Server returned an empty user payload');
   }, []);
 
   const clearAuthState = useCallback(() => {
@@ -105,7 +105,7 @@ export function AuthProvider({ children }) {
       setUser(userData);
       return res.data;
     }
-    throw new Error('Failed to fetch updated profile data from server');
+    throw new Error('Server returned an empty updated profile payload');
   };
 
   const changePassword = async (currentPassword, newPassword) => {

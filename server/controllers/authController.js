@@ -91,25 +91,22 @@ exports.getMe = asyncHandler(async (req, res) => {
 // @route   PUT /api/v1/auth/me
 exports.updateMe = asyncHandler(async (req, res) => {
   const allowedFields = ['name', 'phone', 'address'];
-  const fieldsToUpdate = {};
-
-  allowedFields.forEach((field) => {
-    if (Object.prototype.hasOwnProperty.call(req.body, field)) {
-      fieldsToUpdate[field] = req.body[field];
-    }
-  });
-
-  const user = await User.findByIdAndUpdate(req.user._id, fieldsToUpdate, {
-    new: true,
-    runValidators: true,
-  });
+  const user = await User.findById(req.user._id);
 
   if (!user) {
     return res.status(404).json({
       success: false,
-      error: 'User not found',
+      error: 'User account no longer exists',
     });
   }
+
+  allowedFields.forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+      user[field] = req.body[field];
+    }
+  });
+
+  await user.save();
 
   res.status(200).json({
     success: true,
@@ -134,7 +131,7 @@ exports.changePassword = asyncHandler(async (req, res) => {
   if (!user) {
     return res.status(404).json({
       success: false,
-      error: 'User not found',
+      error: 'User account no longer exists',
     });
   }
 
