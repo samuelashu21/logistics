@@ -148,13 +148,23 @@ const DriverDetailPage = () => {
     fetchDriver();
   }, [fetchDriver]);
 
-  const buildPayload = () => ({
-    user: form.user,
-    licenseNumber: form.licenseNumber,
-    licenseExpiry: form.licenseExpiry,
-    experience: form.experience === '' ? 0 : Number(form.experience),
-    status: form.status,
-  });
+  const buildPayload = () => {
+    const payload = {
+      licenseNumber: form.licenseNumber,
+      licenseExpiry: form.licenseExpiry,
+      status: form.status,
+    };
+
+    if (form.user) {
+      payload.user = form.user;
+    }
+
+    if (form.experience !== '') {
+      payload.experience = Number(form.experience);
+    }
+
+    return payload;
+  };
 
   const handleCreate = async (e) => {
     e.preventDefault();
