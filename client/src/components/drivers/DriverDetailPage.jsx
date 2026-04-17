@@ -67,11 +67,13 @@ const DriverDetailPage = () => {
 
   const fetchDriverUsers = useCallback(async () => {
     if (!canManage) return;
-
-    const usersRes = await getUsers({ role: 'driver', limit: 100 }).catch(() => ({
-      data: { data: [] },
-    }));
-    setDriverUsers(usersRes.data.data || usersRes.data.users || []);
+    try {
+      const usersRes = await getUsers({ role: 'driver', limit: 100 });
+      setDriverUsers(usersRes.data.data || usersRes.data.users || []);
+    } catch {
+      setDriverUsers([]);
+      setError((prev) => prev || 'Failed to load driver users');
+    }
   }, [canManage]);
 
   const fetchDriver = useCallback(async () => {
