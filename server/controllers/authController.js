@@ -52,7 +52,7 @@ exports.login = asyncHandler(async (req, res) => {
 
   if (!user) {
     return res.status(401).json({
-      success: false,
+      success: false, 
       error: 'Invalid credentials',
     });
   }

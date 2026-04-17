@@ -4,7 +4,7 @@ import Spinner from './Spinner.jsx';
 
 export default function PrivateRoute({ roles = [] }) {
   const { token, user, loading } = useAuth();
-
+ 
   if (loading && token) return <Spinner />;
   if (!token) return <Navigate to="/login" replace />;
 
@@ -15,3 +15,4 @@ export default function PrivateRoute({ roles = [] }) {
 
   return <Outlet />;
 } 
+

@@ -9,7 +9,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   console.log('[LOGIN RENDER]', {
-    loading,
+    loading, 
     isAuthenticated,
     path: window.location.pathname,
     token: localStorage.getItem('token'),
@@ -97,7 +97,7 @@ export default function LoginPage() {
             >
               {submitting ? 'Signing in…' : 'Sign In'}
             </button>
-          </form>
+          </form> 
           <p className="text-center mt-2 text-sm">
             Don&apos;t have an account? <Link to="/register">Register</Link>
           </p>

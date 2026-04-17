@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { login as loginRequest, register as registerRequest, getMe } from '../services/api.js';
 
 const AuthContext = createContext(null);
+const TOKEN_FIELDS = ['token', 'accessToken', 'jwt'];
 
 function decodeToken(token) {
   try {
@@ -12,13 +13,19 @@ function decodeToken(token) {
   }
 }
 
+function pickFirstValue(source, keys) {
+  for (const key of keys) {
+    if (source?.[key]) return source[key];
+  }
+  return null;
+}
+
 // Universal extractor for varying backend response shapes
 function extractAuthPayload(responseData) {
   const token =
-    responseData?.token ||
-    responseData?.data?.token ||
-    responseData?.data?.data?.token ||
-    null;
+    pickFirstValue(responseData, TOKEN_FIELDS) ||
+    pickFirstValue(responseData?.data, TOKEN_FIELDS) ||
+    pickFirstValue(responseData?.data?.data, TOKEN_FIELDS);
 
   // Prefer explicit user objects first
   let user =
@@ -46,13 +53,16 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
-  const logout = useCallback(() => {
+  const clearAuthState = useCallback(() => {
     localStorage.removeItem('token');
-    delete axios.defaults.headers.common.Authorization;
     setToken(null);
     setUser(null);
-    setLoading(false);
   }, []);
+
+  const logout = useCallback(() => {
+    clearAuthState();
+    setLoading(false);
+  }, [clearAuthState]);
 
   useEffect(() => {
     if (!token) return;
@@ -79,60 +89,46 @@ export function AuthProvider({ children }) {
 
       try {
         setLoading(true);
-        axios.defaults.headers.common.Authorization = `Bearer ${token}`;
-        const res = await axios.get('/api/v1/auth/me');
+        const res = await getMe();
         setUser(res?.data?.data || res?.data?.user || null);
       } catch (err) {
-        console.error('[AUTH] /me failed:', err?.response?.status, err?.response?.data);
-        // keep token to avoid immediate bounce loops
-        setUser(null);
+        console.error('[AUTH] /me failed:', err?.message);
+        clearAuthState();
       } finally {
         setLoading(false);
       }
     };
 
     loadUser();
-  }, [token]);
+  }, [token, clearAuthState]);
 
   const login = async (email, password) => {
-    console.log('[AUTH] login start', { email });
-
-    const res = await axios.post('/api/v1/auth/login', { email, password });
-    console.log('[AUTH] raw login response:', res.data);
+    const res = await loginRequest({ email, password });
 
     const { token: newToken, user: userData } = extractAuthPayload(res.data);
-    console.log('[AUTH] extracted:', { newToken, userData });
 
     if (!newToken) throw new Error('No token received');
 
     localStorage.setItem('token', newToken);
-    axios.defaults.headers.common.Authorization = `Bearer ${newToken}`;
     setToken(newToken);
     setUser(userData || null);
     setLoading(false);
 
-    console.log('[AUTH] token saved:', localStorage.getItem('token'));
     return res.data;
   };
 
   const register = async (payload) => {
-    console.log('[AUTH] register start');
-
-    const res = await axios.post('/api/v1/auth/register', payload);
-    console.log('[AUTH] raw register response:', res.data);
+    const res = await registerRequest(payload);
 
     const { token: newToken, user: newUser } = extractAuthPayload(res.data);
-    console.log('[AUTH] extracted register:', { newToken, newUser });
 
     if (!newToken) throw new Error('No token received');
 
     localStorage.setItem('token', newToken);
-    axios.defaults.headers.common.Authorization = `Bearer ${newToken}`;
     setToken(newToken);
     setUser(newUser || null);
     setLoading(false);
 
-    console.log('[AUTH] token saved after register:', localStorage.getItem('token'));
     return res.data;
   };
 
@@ -144,7 +140,7 @@ export function AuthProvider({ children }) {
     >
       {children}
     </AuthContext.Provider>
-  );
+  ); 
 }
 
 export function useAuth() {
