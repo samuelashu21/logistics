@@ -100,11 +100,29 @@ exports.updateMe = asyncHandler(async (req, res) => {
     });
   }
 
-  allowedFields.forEach((field) => {
+  for (const field of allowedFields) {
     if (Object.prototype.hasOwnProperty.call(req.body, field)) {
-      user[field] = req.body[field];
+      const value = req.body[field];
+
+      if (typeof value !== 'string') {
+        return res.status(400).json({
+          success: false,
+          error: `${field} must be a string`,
+        });
+      }
+
+      const normalizedValue = value.trim();
+
+      if (field === 'name' && !normalizedValue) {
+        return res.status(400).json({
+          success: false,
+          error: 'Name is required',
+        });
+      }
+
+      user[field] = normalizedValue;
     }
-  });
+  }
 
   await user.save();
 
@@ -123,6 +141,13 @@ exports.changePassword = asyncHandler(async (req, res) => {
     return res.status(400).json({
       success: false,
       error: 'Please provide currentPassword and newPassword',
+    });
+  }
+
+  if (typeof newPassword !== 'string' || newPassword.length < 6) {
+    return res.status(400).json({
+      success: false,
+      error: 'New password must be at least 6 characters',
     });
   }
 
