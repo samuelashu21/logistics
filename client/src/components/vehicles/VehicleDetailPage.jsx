@@ -240,10 +240,11 @@ const VehicleDetailPage = () => {
             <form onSubmit={handleCreate}>
               {['make', 'model', 'year', 'vin', 'licensePlate', 'color', 'capacity', 'type'].map((field) => (
                 <div className="form-group mb-2" key={field}>
-                  <label className="form-label">
+                  <label className="form-label" htmlFor={`create-${field}`}>
                     {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
                   </label>
                   <input
+                    id={`create-${field}`}
                     type={field === 'year' || field === 'capacity' ? 'number' : 'text'}
                     className="form-control"
                     value={form[field]}
@@ -252,8 +253,9 @@ const VehicleDetailPage = () => {
                 </div>
               ))}
               <div className="form-group mb-2">
-                <label className="form-label">Status</label>
+                <label className="form-label" htmlFor="create-status">Status</label>
                 <select
+                  id="create-status"
                   className="form-control"
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -288,10 +290,11 @@ const VehicleDetailPage = () => {
               <form onSubmit={handleUpdate}>
                 {['make', 'model', 'year', 'vin', 'licensePlate', 'color', 'capacity', 'type'].map((field) => (
                   <div className="form-group mb-2" key={field}>
-                    <label className="form-label">
+                    <label className="form-label" htmlFor={`edit-${field}`}>
                       {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
                     </label>
                     <input
+                      id={`edit-${field}`}
                       type={field === 'year' || field === 'capacity' ? 'number' : 'text'}
                       className="form-control"
                       value={form[field]}
@@ -300,8 +303,9 @@ const VehicleDetailPage = () => {
                   </div>
                 ))}
                 <div className="form-group mb-2">
-                  <label className="form-label">Status</label>
+                  <label className="form-label" htmlFor="edit-status">Status</label>
                   <select
+                    id="edit-status"
                     className="form-control"
                     value={form.status}
                     onChange={(e) => setForm({ ...form, status: e.target.value })}
