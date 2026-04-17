@@ -96,7 +96,7 @@ exports.deleteVehicle = asyncHandler(async (req, res) => {
 exports.assignDriver = asyncHandler(async (req, res) => {
   const { driverId } = req.body;
 
-  if (!driverId || !mongoose.Types.ObjectId.isValid(req.params.id)) {
+  if (!driverId || !mongoose.Types.ObjectId.isValid(req.params.id) || !mongoose.Types.ObjectId.isValid(driverId)) {
     return res.status(400).json({ success: false, error: 'Invalid ID or driverId' });
   }
 
@@ -105,10 +105,11 @@ exports.assignDriver = asyncHandler(async (req, res) => {
 
   // Update Driver link
   const driver = await Driver.findOne({ user: driverId });
-  if (driver) {
-    driver.assignedVehicle = vehicle._id;
-    await driver.save();
+  if (!driver) {
+    return res.status(404).json({ success: false, error: 'Driver profile not found for the given user' });
   }
+  driver.assignedVehicle = vehicle._id;
+  await driver.save();
 
   // Update Vehicle link
   vehicle.assignedDriver = driverId;

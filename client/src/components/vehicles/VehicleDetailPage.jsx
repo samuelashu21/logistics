@@ -374,8 +374,8 @@ const VehicleDetailPage = () => {
                       onChange={(e) => setSelectedDriver(e.target.value)}
                     >
                       <option value="">Select driver...</option>
-                      {drivers.map((d) => (
-                        <option key={d._id} value={d._id}>
+                      {drivers.filter((d) => d.user?._id).map((d) => (
+                        <option key={d._id} value={d.user._id}>
                           {d.name || d.user?.name || d.user?.email}
                         </option>
                       ))}
