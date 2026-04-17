@@ -79,9 +79,9 @@ const DriverDetailPage = () => {
     } catch (err) {
       setDriverUsers([]);
       if (err.response?.status === 403) {
-        setError('Only admins can view user accounts for driver creation.');
+        setError('Only admins can create drivers.');
       } else {
-        setError('Failed to load user accounts for driver creation.');
+        setError('Unable to create driver at this time.');
       }
     }
   }, [canCreateDriver]);
