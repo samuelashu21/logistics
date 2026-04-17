@@ -407,50 +407,52 @@ const VehicleDetailPage = () => {
       </div>
       )}
 
-      {/* Order History Table */}
-      <div className="card">
-        <div className="card-header">
-          <h3>Recent Order History</h3>
-        </div>
-        <div className="card-body">
-          {orders.length === 0 ? (
-            <p className="text-muted text-center py-2">No orders recorded for this vehicle</p>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-striped">
-                <thead>
-                  <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Status</th>
-                    <th>Amount</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map((order) => (
-                    <tr key={order._id}>
-                      <td>
-                        <Link to={`/orders/${order._id}`} className="font-mono">
-                          #{order._id?.slice(-6).toUpperCase()}
-                        </Link>
-                      </td>
-                      <td>{order.customer?.name || 'Walk-in'}</td>
-                      <td>
-                        <span className={`badge ${orderStatusBadge(order.status)}`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td>${(order.totalAmount ?? 0).toLocaleString()}</td>
-                      <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+      {!isCreateMode && (
+        /* Order History Table */
+        <div className="card">
+          <div className="card-header">
+            <h3>Recent Order History</h3>
+          </div>
+          <div className="card-body">
+            {orders.length === 0 ? (
+              <p className="text-muted text-center py-2">No orders recorded for this vehicle</p>
+            ) : (
+              <div className="table-responsive">
+                <table className="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Customer</th>
+                      <th>Status</th>
+                      <th>Amount</th>
+                      <th>Date</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody>
+                    {orders.map((order) => (
+                      <tr key={order._id}>
+                        <td>
+                          <Link to={`/orders/${order._id}`} className="font-mono">
+                            #{order._id?.slice(-6).toUpperCase()}
+                          </Link>
+                        </td>
+                        <td>{order.customer?.name || 'Walk-in'}</td>
+                        <td>
+                          <span className={`badge ${orderStatusBadge(order.status)}`}>
+                            {order.status}
+                          </span>
+                        </td>
+                        <td>${(order.totalAmount ?? 0).toLocaleString()}</td>
+                        <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
