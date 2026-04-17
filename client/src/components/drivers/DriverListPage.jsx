@@ -27,7 +27,6 @@ const DriverListPage = () => {
   const [statusFilter, setStatusFilter] = useState('');
 
   const canManage = user.role === 'admin' || user.role === 'owner';
-  const canCreateDriver = user.role === 'admin';
 
   const fetchDrivers = useCallback(async () => {
     try {
@@ -59,7 +58,7 @@ const DriverListPage = () => {
       <div className="page-header mb-2">
         <div className="flex-between">
           <h1>Drivers</h1>
-          {canCreateDriver && (
+          {canManage && (
             <Link to="/drivers/new" className="btn btn-primary">
               + Add Driver
             </Link>
