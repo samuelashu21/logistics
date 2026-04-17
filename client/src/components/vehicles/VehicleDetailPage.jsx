@@ -38,6 +38,8 @@ const orderStatusBadge = (status) => {
   return map[status] || 'badge-info';
 };
 
+const VEHICLE_FORM_FIELDS = ['make', 'model', 'year', 'vin', 'licensePlate', 'color', 'capacity', 'type'];
+
 const VehicleDetailPage = () => {
   const { id } = useParams();
   const { user } = useAuth();
@@ -125,7 +127,9 @@ const VehicleDetailPage = () => {
   useEffect(() => {
     if (isCreateMode && !canManage) {
       setError('Not authorized to create vehicles');
+      return;
     }
+    setError((prev) => (prev === 'Not authorized to create vehicles' ? '' : prev));
   }, [isCreateMode, canManage]);
 
   const handleCreate = async (e) => {
@@ -238,7 +242,7 @@ const VehicleDetailPage = () => {
           </div>
           <div className="card-body">
             <form onSubmit={handleCreate}>
-              {['make', 'model', 'year', 'vin', 'licensePlate', 'color', 'capacity', 'type'].map((field) => (
+              {VEHICLE_FORM_FIELDS.map((field) => (
                 <div className="form-group mb-2" key={field}>
                   <label className="form-label" htmlFor={`create-${field}`}>
                     {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
@@ -288,7 +292,7 @@ const VehicleDetailPage = () => {
           <div className="card-body">
             {editing ? (
               <form onSubmit={handleUpdate}>
-                {['make', 'model', 'year', 'vin', 'licensePlate', 'color', 'capacity', 'type'].map((field) => (
+                {VEHICLE_FORM_FIELDS.map((field) => (
                   <div className="form-group mb-2" key={field}>
                     <label className="form-label" htmlFor={`edit-${field}`}>
                       {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
