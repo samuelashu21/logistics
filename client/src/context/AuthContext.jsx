@@ -1,49 +1,15 @@
-import { useContext, useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { login as loginRequest, register as registerRequest, getMe } from '../services/api.js';
 import { AuthContext } from './AuthContextValue.js';
 
-const TOKEN_FIELDS = ['token', 'accessToken', 'jwt'];
-
-function decodeToken(token) {
-  try {
-    const payload = token.split('.')[1];
-    return JSON.parse(atob(payload));
-  } catch {
-    return null;
-  }
-}
-
-function pickFirstValue(source, keys) {
-  for (const key of keys) {
-    if (source?.[key]) return source[key];
-  }
-  return null;
-}
-
-// Universal extractor for varying backend response shapes
-function extractAuthPayload(responseData) {
-  const token =
-    pickFirstValue(responseData, TOKEN_FIELDS) ||
-    pickFirstValue(responseData?.data, TOKEN_FIELDS) ||
-    pickFirstValue(responseData?.data?.data, TOKEN_FIELDS);
-
-  // Prefer explicit user objects first
-  let user =
-    responseData?.user ||
-    responseData?.data?.user ||
-    responseData?.data?.data?.user ||
-    null;
-
-  // Common shape in your backend: { success, token, data: user }
-  if (!user && responseData?.data && typeof responseData.data === 'object' && !Array.isArray(responseData.data)) {
-    user = responseData.data;
-  }
-
-  // JWT fallback
-  if (!user && token) {
-    const decoded = decodeToken(token);
-    if (decoded) user = decoded;
-  }
+/**
+ * Robust extraction based on your backend:
+ * res.status(statusCode).json({ success: true, token, data: userData });
+ */
+function extractAuthPayload(responseBody) {
+  // responseBody is the 'res.data' from axios
+  const token = responseBody?.token || null;
+  const user = responseBody?.data || null;
 
   return { token, user };
 }
@@ -64,87 +30,86 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, [clearAuthState]);
 
+  // Initial Load: Check if current token is valid and fetch user profile
   useEffect(() => {
-    if (!token) return;
-
-    const decoded = decodeToken(token);
-    if (!decoded?.exp) return;
-
-    const expiresIn = decoded.exp * 1000 - Date.now();
-    if (expiresIn <= 0) {
-      logout();
-      return;
-    }
-
-    const timer = setTimeout(logout, expiresIn);
-    return () => clearTimeout(timer);
-  }, [token, logout]);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      if (!token) {
+    const initAuth = async () => {
+      const storedToken = localStorage.getItem('token');
+      if (!storedToken) {
         setLoading(false);
         return;
       }
 
       try {
-        setLoading(true);
         const res = await getMe();
-        setUser(res?.data?.data || res?.data?.user || null);
+        // Backend /me returns { success: true, data: user }
+        const userData = res.data?.data || null;
+        if (userData) {
+          setUser(userData);
+        } else {
+          clearAuthState();
+        }
       } catch (err) {
-        console.error('[AUTH] /me failed:', err?.message);
+        console.error('[AUTH ERROR] Validation failed:', err.message);
         clearAuthState();
       } finally {
         setLoading(false);
       }
     };
-
-    loadUser();
-  }, [token, clearAuthState]);
+    initAuth();
+  }, [clearAuthState]);
 
   const login = async (email, password) => {
     const res = await loginRequest({ email, password });
-
+    
+    // We pass res.data because that contains { token, data }
     const { token: newToken, user: userData } = extractAuthPayload(res.data);
 
-    if (!newToken) throw new Error('No token received');
+    if (!newToken) {
+      console.error('Extraction failed. Response body:', res.data);
+      throw new Error('Invalid server response: No token found');
+    }
 
     localStorage.setItem('token', newToken);
     setToken(newToken);
-    setUser(userData || null);
-    setLoading(false);
-
+    setUser(userData);
+    
     return res.data;
   };
 
   const register = async (payload) => {
     const res = await registerRequest(payload);
+    const { token: newToken, user: userData } = extractAuthPayload(res.data);
 
-    const { token: newToken, user: newUser } = extractAuthPayload(res.data);
-
-    if (!newToken) throw new Error('No token received');
+    if (!newToken) throw new Error('Registration successful, but no token received');
 
     localStorage.setItem('token', newToken);
     setToken(newToken);
-    setUser(newUser || null);
-    setLoading(false);
-
+    setUser(userData);
+    
     return res.data;
   };
 
-  const isAuthenticated = !!token;
+  const value = {
+    user,
+    token,
+    loading,
+    login,
+    register,
+    logout,
+    isAuthenticated: !!token && !!user
+  };
 
   return (
-    <AuthContext.Provider
-      value={{ user, token, loading, login, register, logout, isAuthenticated }}
-    > 
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
-  ); 
+  );
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
-  return ctx;
-} 
+  const context = React.useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}

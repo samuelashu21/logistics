@@ -10,7 +10,7 @@ const vehicleStatusBadge = (status) => {
     active: 'badge-success',
     available: 'badge-success',
     inactive: 'badge-danger',
-    maintenance: 'badge-warning',
+    maintenance: 'badge-warning', 
     in_use: 'badge-info',
     assigned: 'badge-info',
   };

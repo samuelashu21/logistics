@@ -32,7 +32,9 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false, // Disabling CSP temporarily helps debug Socket issues
+})); 
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

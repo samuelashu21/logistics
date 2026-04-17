@@ -5,11 +5,12 @@ let io;
 const socketManager = {
   init(server) {
     io = new Server(server, {
-      cors: {
-        origin: process.env.CLIENT_URL || '*',
-        methods: ['GET', 'POST'],
-      },
-    });
+  cors: {
+    origin: "http://localhost:3000", // Be explicit rather than using '*'
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
 
     io.on('connection', (socket) => {
       console.log('User connected:', socket.id);
