@@ -72,7 +72,7 @@ const DriverDetailPage = () => {
       setDriverUsers(usersRes.data.data || usersRes.data.users || []);
     } catch {
       setDriverUsers([]);
-      setError((prev) => prev || 'Failed to load driver users');
+      setError('Failed to load driver users');
     }
   }, [canManage]);
 
