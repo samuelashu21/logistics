@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   getVehicle,
+  createVehicle,
   updateVehicle,
   deleteVehicle,
   assignDriver,
@@ -41,6 +42,7 @@ const VehicleDetailPage = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isCreateMode = id === 'new';
 
   const [vehicle, setVehicle] = useState(null);
   const [orders, setOrders] = useState([]);
@@ -49,7 +51,17 @@ const VehicleDetailPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({});
+  const [form, setForm] = useState({
+    make: '',
+    model: '',
+    year: '',
+    vin: '',
+    licensePlate: '',
+    color: '',
+    capacity: '',
+    type: '',
+    status: 'available',
+  });
   const [selectedDriver, setSelectedDriver] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -57,6 +69,13 @@ const VehicleDetailPage = () => {
   const canManage = user?.role === 'admin' || user?.role === 'owner';
 
   const fetchVehicle = useCallback(async () => {
+    if (isCreateMode) {
+      setLoading(false);
+      setVehicle(null);
+      setOrders([]);
+      return;
+    }
+
     try {
       setLoading(true);
       setError('');
@@ -76,6 +95,7 @@ const VehicleDetailPage = () => {
         make: v.make || '',
         model: v.model || '',
         year: v.year || '',
+        vin: v.vin || '',
         licensePlate: v.licensePlate || '',
         color: v.color || '',
         capacity: v.capacity || '',
@@ -96,11 +116,38 @@ const VehicleDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, canManage]);
+  }, [id, canManage, isCreateMode]);
 
   useEffect(() => {
     fetchVehicle();
   }, [fetchVehicle]);
+
+  useEffect(() => {
+    if (isCreateMode && !canManage) {
+      setError('Not authorized to create vehicles');
+    }
+  }, [isCreateMode, canManage]);
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!canManage) return;
+
+    try {
+      setSubmitting(true);
+      setError('');
+      const res = await createVehicle(form);
+      const created = res.data?.data || res.data?.vehicle;
+      if (created?._id) {
+        navigate(`/vehicles/${created._id}`);
+        return;
+      }
+      navigate('/vehicles');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to create vehicle');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -147,7 +194,7 @@ const VehicleDetailPage = () => {
 
   if (loading) return <Spinner />;
 
-  if (!vehicle) {
+  if (!isCreateMode && !vehicle) {
     return (
       <div className="container">
         <div className="alert alert-danger">Vehicle not found</div>
@@ -166,9 +213,9 @@ const VehicleDetailPage = () => {
             <Link to="/vehicles" className="text-muted text-sm">
               ← Back to Vehicles
             </Link>
-            <h1>{vehicle.make} {vehicle.model}</h1>
+            <h1>{isCreateMode ? 'Add Vehicle' : `${vehicle.make} ${vehicle.model}`}</h1>
           </div>
-          {canManage && !editing && (
+          {canManage && !isCreateMode && !editing && (
             <div className="flex gap-1">
               <button className="btn btn-primary" onClick={() => setEditing(true)}>
                 Edit
@@ -184,6 +231,52 @@ const VehicleDetailPage = () => {
       {error && <div className="alert alert-danger mb-2">{error}</div>}
       {success && <div className="alert alert-success mb-2">{success}</div>}
 
+      {isCreateMode ? (
+        <div className="card mb-3">
+          <div className="card-header">
+            <h3>Vehicle Information</h3>
+          </div>
+          <div className="card-body">
+            <form onSubmit={handleCreate}>
+              {['make', 'model', 'year', 'vin', 'licensePlate', 'color', 'capacity', 'type'].map((field) => (
+                <div className="form-group mb-2" key={field}>
+                  <label className="form-label">
+                    {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
+                  </label>
+                  <input
+                    type={field === 'year' || field === 'capacity' ? 'number' : 'text'}
+                    className="form-control"
+                    value={form[field]}
+                    onChange={(e) => setForm({ ...form, [field]: e.target.value })}
+                  />
+                </div>
+              ))}
+              <div className="form-group mb-2">
+                <label className="form-label">Status</label>
+                <select
+                  className="form-control"
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value })}
+                >
+                  <option value="available">Available</option>
+                  <option value="active">Active</option>
+                  <option value="in_use">In Use</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+              <div className="flex gap-1 mt-2">
+                <button type="submit" className="btn btn-primary" disabled={submitting || !canManage}>
+                  {submitting ? 'Creating...' : 'Create Vehicle'}
+                </button>
+                <Link to="/vehicles" className="btn btn-outline">
+                  Cancel
+                </Link>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : (
       <div className="grid grid-2 gap-2 mb-3">
         {/* Left Column: Vehicle Info */}
         <div className="card">
@@ -193,7 +286,7 @@ const VehicleDetailPage = () => {
           <div className="card-body">
             {editing ? (
               <form onSubmit={handleUpdate}>
-                {['make', 'model', 'year', 'licensePlate', 'color', 'capacity', 'type'].map((field) => (
+                {['make', 'model', 'year', 'vin', 'licensePlate', 'color', 'capacity', 'type'].map((field) => (
                   <div className="form-group mb-2" key={field}>
                     <label className="form-label">
                       {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
@@ -234,6 +327,7 @@ const VehicleDetailPage = () => {
                 <InfoRow label="Make" value={vehicle.make} />
                 <InfoRow label="Model" value={vehicle.model} />
                 <InfoRow label="Year" value={vehicle.year} />
+                <InfoRow label="VIN" value={vehicle.vin} />
                 <InfoRow label="License Plate" value={vehicle.licensePlate} />
                 <InfoRow label="Color" value={vehicle.color} />
                 <InfoRow label="Capacity" value={vehicle.capacity} />
@@ -311,6 +405,7 @@ const VehicleDetailPage = () => {
           </div>
         </div>
       </div>
+      )}
 
       {/* Order History Table */}
       <div className="card">
