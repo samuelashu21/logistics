@@ -46,6 +46,7 @@ const DriverDetailPage = () => {
   
   const isCreateMode = id === 'new';
   const canManage = authUser?.role === 'admin' || authUser?.role === 'owner';
+  const canCreateDriver = authUser?.role === 'admin';
 
   const [driver, setDriver] = useState(null);
   const [trips, setTrips] = useState([]);
@@ -70,17 +71,20 @@ const DriverDetailPage = () => {
 
   // 1. Defensively fetch users (handles the 403 Forbidden error)
   const fetchDriverUsers = useCallback(async () => {
-    if (!canManage) return;
+    if (!canCreateDriver) return;
     try {
       const res = await getUsers({ role: 'driver', limit: 1000 });
       const users = res.data?.data || res.data?.users || res.data || [];
       setDriverUsers(Array.isArray(users) ? users : []);
     } catch (err) {
-      // Log the 403 but don't break the UI
-      console.error("User list access denied (403). Only Admins can view the user list.");
-      setDriverUsers([]); 
+      setDriverUsers([]);
+      if (err.response?.status === 403) {
+        setError('Only admins can view user accounts for driver creation.');
+      } else {
+        setError('Failed to load user accounts for driver creation.');
+      }
     }
-  }, [canManage]);
+  }, [canCreateDriver]);
 
   const fetchDriverData = useCallback(async () => {
     console.log("DEBUG: Fetching Driver with ID:", id);
@@ -93,6 +97,11 @@ const DriverDetailPage = () => {
 
     if (isCreateMode) {
       setLoading(true);
+      if (!canCreateDriver) {
+        setError('Only admins can add drivers.');
+        setLoading(false);
+        return;
+      }
       await fetchDriverUsers();
       setLoading(false);
       return;
@@ -145,7 +154,7 @@ const DriverDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, isCreateMode, fetchDriverUsers]);
+  }, [id, isCreateMode, canCreateDriver, fetchDriverUsers]);
 
   useEffect(() => {
     fetchDriverData();
