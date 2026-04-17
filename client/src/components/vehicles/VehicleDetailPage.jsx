@@ -178,8 +178,7 @@ const VehicleDetailPage = () => {
     try {
       setSubmitting(true);
       setError('');
-      // Note: Ensure your API service expects (vehicleId, driverId)
-      await assignDriver(id, { driverId: selectedDriver });
+      await assignDriver(id, selectedDriver);
       setSuccess('Driver assigned successfully');
       setSelectedDriver('');
       fetchVehicle();
