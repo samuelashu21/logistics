@@ -11,7 +11,7 @@ export default function PrivateRoute({ roles = [] }) {
   if (roles.length > 0) {
     if (!user) return <Spinner />;
     if (!roles.includes(user.role)) return <Navigate to="/dashboard" replace />;
-  }
+  } 
 
   return <Outlet />;
 } 

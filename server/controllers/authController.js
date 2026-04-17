@@ -62,7 +62,7 @@ exports.login = asyncHandler(async (req, res) => {
       success: false,
       error: 'Account has been suspended',
     });
-  }
+  } 
 
   const isMatch = await user.matchPassword(password);
 

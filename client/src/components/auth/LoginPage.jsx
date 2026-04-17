@@ -17,7 +17,7 @@ export default function LoginPage() {
 
   if (loading) return <div className="spinner-container"><div className="spinner" /></div>;
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
-
+ 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
