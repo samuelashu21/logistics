@@ -144,7 +144,14 @@ exports.changePassword = asyncHandler(async (req, res) => {
     });
   }
 
-  if (typeof newPassword !== 'string' || newPassword.length < 6) {
+  if (typeof newPassword !== 'string') {
+    return res.status(400).json({
+      success: false,
+      error: 'New password must be a string',
+    });
+  }
+
+  if (newPassword.length < 6) {
     return res.status(400).json({
       success: false,
       error: 'New password must be at least 6 characters',
