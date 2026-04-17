@@ -27,6 +27,7 @@ const DriverListPage = () => {
   const [statusFilter, setStatusFilter] = useState('');
 
   const canManage = user.role === 'admin' || user.role === 'owner';
+  const canCreateDriver = user.role === 'admin' || user.role === 'owner';
 
   const fetchDrivers = useCallback(async () => {
     try {
@@ -36,10 +37,15 @@ const DriverListPage = () => {
       if (statusFilter) params.status = statusFilter;
       const res = await getDrivers(params);
       const data = res.data;
+
       setDrivers(data.data || data.drivers || []);
-      setTotalPages(data.totalPages || Math.ceil((data.total || 0) / 10) || 1);
+      setTotalPages(data.pages || Math.ceil((data.total || 0) / 10) || 1);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load drivers');
+      setError(
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        'Failed to load drivers'
+      );
     } finally {
       setLoading(false);
     }
@@ -58,7 +64,7 @@ const DriverListPage = () => {
       <div className="page-header mb-2">
         <div className="flex-between">
           <h1>Drivers</h1>
-          {canManage && (
+          {canCreateDriver && (
             <Link to="/drivers/new" className="btn btn-primary">
               + Add Driver
             </Link>
@@ -68,7 +74,6 @@ const DriverListPage = () => {
 
       {error && <div className="alert alert-danger mb-2">{error}</div>}
 
-      {/* Filters */}
       <div className="card mb-2">
         <div className="card-body">
           <div className="flex gap-2 flex-wrap">
@@ -112,8 +117,7 @@ const DriverListPage = () => {
                   </thead>
                   <tbody>
                     {drivers.map((d) => {
-                      const name =
-                        d.name || d.user?.name || d.user?.email || 'N/A';
+                      const name = d.name || d.user?.name || d.user?.email || 'N/A';
                       const license = d.licenseNumber || d.license || 'N/A';
                       const vehicleName = d.vehicle
                         ? `${d.vehicle.make || ''} ${d.vehicle.model || ''}`.trim() || 'Assigned'
@@ -139,10 +143,7 @@ const DriverListPage = () => {
                             </span>
                           </td>
                           <td>
-                            <Link
-                              to={`/drivers/${d._id}`}
-                              className="btn btn-sm btn-outline"
-                            >
+                            <Link to={`/drivers/${d._id}`} className="btn btn-sm btn-outline">
                               View
                             </Link>
                           </td>
@@ -155,7 +156,7 @@ const DriverListPage = () => {
             )}
           </div>
           <Pagination
-            currentPage={page} 
+            currentPage={page}
             totalPages={totalPages}
             onPageChange={setPage}
           />

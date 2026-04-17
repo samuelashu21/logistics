@@ -25,7 +25,7 @@ export default function ProfilePage() {
 
   const handlePasswordChange = (e) =>
     setPasswords((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-
+ 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
     if (!profile.name) {
