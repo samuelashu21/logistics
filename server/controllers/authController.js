@@ -87,6 +87,61 @@ exports.getMe = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Update current logged-in user profile
+// @route   PUT /api/v1/auth/me
+exports.updateMe = asyncHandler(async (req, res) => {
+  const allowedFields = ['name', 'phone', 'address'];
+  const fieldsToUpdate = {};
+
+  allowedFields.forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+      fieldsToUpdate[field] = req.body[field];
+    }
+  });
+
+  const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
+    new: true,
+    runValidators: true,
+  });
+
+  res.status(200).json({
+    success: true,
+    data: user,
+  });
+});
+
+// @desc    Change current logged-in user password
+// @route   PUT /api/v1/auth/change-password
+exports.changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({
+      success: false,
+      error: 'Please provide currentPassword and newPassword',
+    });
+  }
+
+  const user = await User.findById(req.user.id).select('+password');
+
+  const isMatch = await user.matchPassword(currentPassword);
+
+  if (!isMatch) {
+    return res.status(401).json({
+      success: false,
+      error: 'Current password is incorrect',
+    });
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    data: 'Password updated successfully',
+  });
+});
+
 // @desc    Forgot password
 // @route   POST /api/v1/auth/forgot-password
 exports.forgotPassword = asyncHandler(async (req, res) => {

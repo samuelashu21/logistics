@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext.jsx';
-import api from '../../services/api.js';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, updateProfile, changePassword } = useAuth();
   const [profile, setProfile] = useState({ name: '', phone: '' });
   const [passwords, setPasswords] = useState({
     currentPassword: '',
@@ -34,7 +33,7 @@ export default function ProfilePage() {
     }
     setSavingProfile(true);
     try {
-      await api.put('/auth/me', {
+      await updateProfile({
         name: profile.name,
         phone: profile.phone,
       });
@@ -67,10 +66,7 @@ export default function ProfilePage() {
 
     setSavingPassword(true);
     try {
-      await api.put('/auth/change-password', {
-        currentPassword,
-        newPassword,
-      });
+      await changePassword(currentPassword, newPassword);
       toast.success('Password changed');
       setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err) {
