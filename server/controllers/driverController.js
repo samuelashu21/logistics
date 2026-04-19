@@ -12,6 +12,10 @@ const DRIVER_STATUS_ALIASES = {
   inactive: 'offline',
 };
 const ALLOWED_DRIVER_STATUSES = new Set(['available', 'on_trip', 'offline']);
+const ALLOWED_DRIVER_STATUS_FILTERS = [
+  ...Object.keys(DRIVER_STATUS_ALIASES),
+  ...Array.from(ALLOWED_DRIVER_STATUSES),
+];
 
 // @desc    Get all drivers
 // @route   GET /api/v1/drivers 
@@ -28,7 +32,7 @@ exports.getDrivers = asyncHandler(async (req, res) => {
     if (!ALLOWED_DRIVER_STATUSES.has(normalizedStatus)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid status filter',
+        error: `Invalid status filter. Allowed values: ${ALLOWED_DRIVER_STATUS_FILTERS.join(', ')}`,
       });
     }
 
