@@ -21,6 +21,7 @@ import DriverListPage from './pages/DriverListPage.jsx';
 import DriverDetailPage from './pages/DriverDetailPage.jsx';
 import OrderListPage from './pages/OrderListPage.jsx';
 import OrderDetailPage from './pages/OrderDetailPage.jsx';
+import OrderCreatePage from './pages/OrderCreatePage.jsx';
 import AdvertisementListPage from './pages/AdvertisementListPage.jsx';
 import AdvertisementDetailPage from './pages/AdvertisementDetailPage.jsx';
 import UserManagementPage from './pages/UserManagementPage.jsx';
@@ -49,6 +50,7 @@ export default function App() {
               <Route path="/vehicles" element={<VehicleListPage />} />
               <Route path="/vehicles/:id" element={<VehicleDetailPage />} />
               <Route path="/orders" element={<OrderListPage />} />
+              <Route path="/orders/new" element={<OrderCreatePage />} />
               <Route path="/orders/:id" element={<OrderDetailPage />} />
               <Route path="/advertisements" element={<AdvertisementListPage />} />
               <Route path="/advertisements/:id" element={<AdvertisementDetailPage />} />
@@ -81,4 +83,4 @@ export default function App() {
       </SocketProvider>
     </AuthProvider>
   );
-}
+} 
