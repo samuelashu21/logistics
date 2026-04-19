@@ -37,6 +37,23 @@ const STATUS_FLOW = [
   'completed',
 ];
 
+const paymentStatusLabel = (status) => {
+  const map = {
+    pending: 'Awaiting Verification',
+    verified: 'Payment Verified',
+    failed: 'Payment Failed',
+  };
+  return map[status] || 'Awaiting Verification';
+};
+
+const maskPaymentConfirmation = (value) => {
+  if (!value) return 'N/A';
+  if (value.length <= 6) {
+    return `${'*'.repeat(Math.max(value.length - 2, 0))}${value.slice(-2)}`;
+  }
+  return `${value.slice(0, 3)}${'*'.repeat(value.length - 6)}${value.slice(-3)}`;
+};
+
 const OrderDetailPage = () => {
   const { id } = useParams();
   const { user } = useAuth();
@@ -57,6 +74,8 @@ const OrderDetailPage = () => {
   const isCustomer = user.role === 'customer';
   const canApprove = isAdmin;
   const canAssign = isAdmin || isOwner;
+  const isOrderOwner = order?.customer?._id === user?._id;
+  const canViewSensitivePaymentDetails = isAdmin || (isCustomer && isOrderOwner);
 
   const clearMessages = () => {
     setError('');
@@ -119,7 +138,16 @@ const OrderDetailPage = () => {
           break;
         }
         case 'verify_payment':
-          await verifyPayment(id, { verified: true });
+          {
+            const paymentConfirmation = window.prompt('Enter payment confirmation/reference:');
+            if (paymentConfirmation === null) return;
+            const confirmation = paymentConfirmation.trim();
+            if (!confirmation) {
+              setError('Payment confirmation is required');
+              return;
+            }
+            await verifyPayment(id, { paymentConfirmation: confirmation });
+          }
           setSuccess('Payment verified');
           break;
         case 'start':
@@ -249,7 +277,30 @@ const OrderDetailPage = () => {
               label="Total Amount"
               value={`$${(order.totalAmount ?? 0).toLocaleString()}`}
             />
-            <InfoRow label="Payment Status" value={order.paymentStatus || 'pending'} />
+            <InfoRow
+              label="Payment Status"
+              value={paymentStatusLabel(order.paymentStatus || 'pending')}
+            />
+            <InfoRow
+              label="Payment Timeline"
+              value={`Pending → ${paymentStatusLabel(order.paymentStatus || 'pending')}`}
+            />
+            {canViewSensitivePaymentDetails && (
+              <InfoRow
+                label="Payment Amount"
+                value={
+                  order.paymentAmount != null
+                    ? `$${Number(order.paymentAmount).toLocaleString()}`
+                    : 'N/A'
+                }
+              />
+            )}
+            {canViewSensitivePaymentDetails && (
+              <InfoRow
+                label="Payment Confirmation"
+                value={maskPaymentConfirmation(order.paymentConfirmation)}
+              />
+            )}
             <InfoRow label="Pickup Address" value={order.pickupAddress} />
             <InfoRow label="Delivery Address" value={order.deliveryAddress} />
             <InfoRow

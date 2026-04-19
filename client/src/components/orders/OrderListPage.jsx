@@ -41,14 +41,20 @@ const statusBadgeClass = (status) => {
 
 const paymentBadge = (status) => {
   const map = {
-    paid: 'badge-success',
     verified: 'badge-success',
     pending: 'badge-warning',
-    unpaid: 'badge-danger',
     failed: 'badge-danger',
-    refunded: 'badge-info',
   };
   return map[status] || 'badge-warning';
+};
+
+const paymentStatusLabel = (status) => {
+  const map = {
+    pending: 'Awaiting Verification',
+    verified: 'Payment Verified',
+    failed: 'Payment Failed',
+  };
+  return map[status] || 'Awaiting Verification';
 };
 
 const OrderListPage = () => {
@@ -155,10 +161,19 @@ const OrderListPage = () => {
   };
 
   const handleVerifyPayment = async (orderId) => {
+    const paymentConfirmation = window.prompt('Enter payment confirmation/reference:');
+    if (paymentConfirmation === null) return;
+
+    const confirmation = paymentConfirmation.trim();
+    if (!confirmation) {
+      setError('Payment confirmation is required');
+      return;
+    }
+
     try {
       setSubmitting(true);
       clearMessages();
-      await verifyPayment(orderId, { verified: true });
+      await verifyPayment(orderId, { paymentConfirmation: confirmation });
       setSuccess('Payment verified');
       fetchOrders();
     } catch (err) {
@@ -299,7 +314,7 @@ const OrderListPage = () => {
                           <span
                             className={`badge ${paymentBadge(order.paymentStatus || 'pending')}`}
                           >
-                            {order.paymentStatus || 'pending'}
+                            {paymentStatusLabel(order.paymentStatus || 'pending')}
                           </span>
                         </td>
                         <td>

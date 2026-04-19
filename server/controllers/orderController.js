@@ -1,9 +1,38 @@
 const Order = require('../models/Order');
 const Driver = require('../models/Driver');
 const Vehicle = require('../models/Vehicle');
+const socketManager = require('../utils/socketManager');
+const { createNotification } = require('./notificationController');
 
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
+
+const getOrderCustomerId = (order) => {
+  if (!order?.customer) return null;
+  if (typeof order.customer === 'object') {
+    return order.customer._id?.toString?.() || null;
+  }
+  return order.customer.toString();
+};
+
+const canViewSensitivePaymentFields = (user, order) => {
+  if (!user || !order) return false;
+  if (user.role === 'admin') return true;
+  if (user.role !== 'customer') return false;
+  return getOrderCustomerId(order) === user.id;
+};
+
+const sanitizeOrderPaymentFields = (user, order) => {
+  const plainOrder = order?.toObject ? order.toObject() : order;
+  if (!plainOrder) return plainOrder;
+  if (canViewSensitivePaymentFields(user, plainOrder)) {
+    return plainOrder;
+  }
+
+  delete plainOrder.paymentAmount;
+  delete plainOrder.paymentConfirmation;
+  return plainOrder;
+};
 
 const ensureOwnerCanManageOrder = async (order, ownerId, action) => {
   if (!order.vehicle) {
@@ -57,7 +86,7 @@ exports.getOrders = asyncHandler(async (req, res) => {
     total,
     page,
     pages: Math.ceil(total / limit),
-    data: orders,
+    data: orders.map((order) => sanitizeOrderPaymentFields(req.user, order)),
   });
 });
 
@@ -78,7 +107,7 @@ exports.getOrder = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: order,
+    data: sanitizeOrderPaymentFields(req.user, order),
   });
 });
 
@@ -331,6 +360,26 @@ exports.verifyPayment = asyncHandler(async (req, res) => {
   order.paymentStatus = 'verified';
   order.paymentConfirmation = paymentConfirmation;
   await order.save();
+
+  if (order.customer) {
+    await createNotification(
+      order.customer,
+      'payment_confirmation',
+      'Payment verified',
+      `Payment for order #${order._id.toString().slice(-6).toUpperCase()} has been verified.`,
+      order._id
+    );
+
+    try {
+      socketManager.getIO().to(order.customer.toString()).emit('orderUpdate', {
+        orderId: order._id,
+        paymentStatus: order.paymentStatus,
+      });
+    } catch (err) {
+      // Socket.io may not be initialized in tests
+      console.error('Socket emit failed:', err.message);
+    }
+  }
 
   res.status(200).json({
     success: true,
