@@ -158,7 +158,7 @@ exports.updateOrderStatus = asyncHandler(async (req, res) => {
 // @desc    Approve order
 // @route   PUT /api/v1/orders/:id/approve
 exports.approveOrder = asyncHandler(async (req, res) => {
-  if (!['admin', 'owner'].includes(req.user.role)) {
+  if (req.user.role !== 'admin') {
     return res.status(403).json({
       success: false,
       error: 'Not authorized to approve orders',
@@ -174,14 +174,11 @@ exports.approveOrder = asyncHandler(async (req, res) => {
     });
   }
 
-  if (req.user.role === 'owner') {
-    const ownerCheck = await ensureOwnerCanManageOrder(order, req.user.id, 'approve');
-    if (!ownerCheck.allowed) {
-      return res.status(403).json({
-        success: false,
-        error: ownerCheck.error,
-      });
-    }
+  if (order.status !== 'paid') {
+    return res.status(400).json({
+      success: false,
+      error: 'Only paid orders can be approved',
+    });
   }
 
   order.status = 'approved';
@@ -252,12 +249,33 @@ exports.assignDriver = asyncHandler(async (req, res) => {
     });
   }
 
+  if (order.status !== 'approved') {
+    return res.status(400).json({
+      success: false,
+      error: 'Drivers can only be assigned to approved orders',
+    });
+  }
+
+  if (order.driver) {
+    return res.status(400).json({
+      success: false,
+      error: 'A driver is already assigned to this order',
+    });
+  }
+
   const driver = await Driver.findOne({ user: driverId });
 
   if (!driver) {
     return res.status(404).json({
       success: false,
       error: 'Driver profile not found for the given user',
+    });
+  }
+
+  if (!driver.isActive || driver.status !== 'available') {
+    return res.status(400).json({
+      success: false,
+      error: 'Selected driver is not available',
     });
   }
 

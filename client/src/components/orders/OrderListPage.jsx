@@ -68,9 +68,8 @@ const OrderListPage = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const isAdmin = user.role === 'admin';
-  const isOwner = user.role === 'owner';
   const isCustomer = user.role === 'customer';
-  const canApprove = isAdmin || isOwner;
+  const canApprove = isAdmin;
 
   const clearMessages = () => {
     setError('');
