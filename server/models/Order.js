@@ -1,5 +1,27 @@
 const mongoose = require('mongoose');
 
+const GeoPointSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point',
+    },
+    coordinates: {
+      type: [Number],
+      required: [true, 'Please add coordinates'],
+      validate: {
+        validator: (value) =>
+          Array.isArray(value)
+          && value.length === 2
+          && value.every((num) => Number.isFinite(num)),
+        message: 'Coordinates must be an array of two numbers [longitude, latitude]',
+      },
+    },
+  },
+  { _id: false }
+);
+
 const OrderSchema = new mongoose.Schema({
   customer: {
     type: mongoose.Schema.Types.ObjectId,
@@ -20,8 +42,8 @@ const OrderSchema = new mongoose.Schema({
       required: [true, 'Please add a pickup address'],
     },
     coordinates: {
-      type: { type: String, enum: ['Point'], default: 'Point' },
-      coordinates: { type: [Number] },
+      type: GeoPointSchema,
+      default: undefined,
     },
   },
   dropoffLocation: {
@@ -30,8 +52,8 @@ const OrderSchema = new mongoose.Schema({
       required: [true, 'Please add a dropoff address'],
     },
     coordinates: {
-      type: { type: String, enum: ['Point'], default: 'Point' },
-      coordinates: { type: [Number] },
+      type: GeoPointSchema,
+      default: undefined,
     },
   },
   status: {

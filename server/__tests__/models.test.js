@@ -259,6 +259,52 @@ describe('Order Model Validation', () => {
     expect(err).toBeUndefined();
   });
 
+  it('should not auto-create invalid geo point objects when coordinates are omitted', () => {
+    const order = new Order({
+      customer: validCustomerId,
+      pickupLocation: { address: '123 Main St' },
+      dropoffLocation: { address: '456 Oak Ave' },
+    });
+
+    expect(order.pickupLocation.coordinates).toBeUndefined();
+    expect(order.dropoffLocation.coordinates).toBeUndefined();
+  });
+
+  it('should reject incomplete geo point objects', () => {
+    const order = new Order({
+      customer: validCustomerId,
+      pickupLocation: {
+        address: '123 Main St',
+        coordinates: { type: 'Point' },
+      },
+      dropoffLocation: {
+        address: '456 Oak Ave',
+        coordinates: { type: 'Point', coordinates: [38.74, 9.03] },
+      },
+    });
+
+    const err = order.validateSync();
+    expect(err).toBeDefined();
+    expect(err.errors['pickupLocation.coordinates.coordinates']).toBeDefined();
+  });
+
+  it('should accept valid geo point objects', () => {
+    const order = new Order({
+      customer: validCustomerId,
+      pickupLocation: {
+        address: '123 Main St',
+        coordinates: { type: 'Point', coordinates: [38.74, 9.03] },
+      },
+      dropoffLocation: {
+        address: '456 Oak Ave',
+        coordinates: { type: 'Point', coordinates: [39.28, 11.83] },
+      },
+    });
+
+    const err = order.validateSync();
+    expect(err).toBeUndefined();
+  });
+
   it('should reject invalid status enum value', () => {
     const order = new Order({
       customer: validCustomerId,
