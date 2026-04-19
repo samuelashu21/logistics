@@ -330,6 +330,44 @@ describe('Order Model Validation', () => {
     });
     expect(order.paymentStatus).toBe('pending');
   });
+
+  it('should strip invalid GeoJSON coordinate objects before validation', async () => {
+    const order = new Order({
+      customer: validCustomerId,
+      pickupLocation: {
+        address: '123 Main St',
+        coordinates: { type: 'Point' },
+      },
+      dropoffLocation: {
+        address: '456 Oak Ave',
+        coordinates: { type: 'Point' },
+      },
+    });
+
+    await expect(order.validate()).resolves.toBeUndefined();
+    const orderObj = order.toObject();
+    expect(orderObj.pickupLocation.coordinates).toBeUndefined();
+    expect(orderObj.dropoffLocation.coordinates).toBeUndefined();
+  });
+
+  it('should default GeoJSON type to Point when coordinate array is valid', async () => {
+    const order = new Order({
+      customer: validCustomerId,
+      pickupLocation: {
+        address: '123 Main St',
+        coordinates: { coordinates: [38.7578, 11.5742] },
+      },
+      dropoffLocation: {
+        address: '456 Oak Ave',
+        coordinates: { coordinates: [39.639, 12.095] },
+      },
+    });
+
+    await expect(order.validate()).resolves.toBeUndefined();
+    const orderObj = order.toObject();
+    expect(orderObj.pickupLocation.coordinates.type).toBe('Point');
+    expect(orderObj.dropoffLocation.coordinates.type).toBe('Point');
+  });
 });
 
 describe('Advertisement Model Validation', () => {

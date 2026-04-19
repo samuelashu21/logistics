@@ -20,7 +20,7 @@ const OrderSchema = new mongoose.Schema({
       required: [true, 'Please add a pickup address'],
     },
     coordinates: {
-      type: { type: String, enum: ['Point'], default: 'Point' },
+      type: { type: String, enum: ['Point'] },
       coordinates: { type: [Number] },
     },
   },
@@ -30,7 +30,7 @@ const OrderSchema = new mongoose.Schema({
       required: [true, 'Please add a dropoff address'],
     },
     coordinates: {
-      type: { type: String, enum: ['Point'], default: 'Point' },
+      type: { type: String, enum: ['Point'] },
       coordinates: { type: [Number] },
     },
   },
@@ -80,5 +80,29 @@ OrderSchema.index({ driver: 1 });
 OrderSchema.index({ status: 1 });
 OrderSchema.index({ 'pickupLocation.coordinates': '2dsphere' });
 OrderSchema.index({ 'dropoffLocation.coordinates': '2dsphere' });
+
+const normalizeOptionalGeoPoint = (location) => {
+  if (!location || !location.coordinates) return;
+
+  const point = location.coordinates;
+  const validArray =
+    Array.isArray(point.coordinates) &&
+    point.coordinates.length === 2 &&
+    point.coordinates.every((value) => Number.isFinite(value));
+
+  if (!validArray) {
+    location.coordinates = undefined;
+    return;
+  }
+
+  if (!point.type) {
+    point.type = 'Point';
+  }
+};
+
+OrderSchema.pre('validate', function preValidateOrder() {
+  normalizeOptionalGeoPoint(this.pickupLocation);
+  normalizeOptionalGeoPoint(this.dropoffLocation);
+});
 
 module.exports = mongoose.model('Order', OrderSchema);
