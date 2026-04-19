@@ -229,7 +229,7 @@ const DriverDashboard = ({ stats, upcomingDeliveries }) => (
             className="btn btn-sm btn-outline mt-2"
           >
             View Details
-          </Link>
+          </Link> 
         </div>
       </div>
     )}

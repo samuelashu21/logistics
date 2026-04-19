@@ -5,15 +5,49 @@ const User = require('../models/User');
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
+const DRIVER_STATUS_ALIASES = {
+  working: 'on_trip',
+  busy: 'on_trip',
+  active: 'available',
+  inactive: 'offline',
+};
+const ALLOWED_DRIVER_STATUSES = new Set(['available', 'on_trip', 'offline']);
+const ALLOWED_DRIVER_STATUS_FILTERS = [
+  ...Object.keys(DRIVER_STATUS_ALIASES),
+  ...Array.from(ALLOWED_DRIVER_STATUSES),
+];
+
 // @desc    Get all drivers
 // @route   GET /api/v1/drivers 
 exports.getDrivers = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 25;
   const startIndex = (page - 1) * limit;
+  const filter = {};
 
-  const total = await Driver.countDocuments();
-  const drivers = await Driver.find()
+  if (req.query.status) {
+    if (typeof req.query.status !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid status filter. Allowed values: ${ALLOWED_DRIVER_STATUS_FILTERS.join(', ')}`,
+      });
+    }
+
+    const requestedStatus = req.query.status.trim().toLowerCase();
+    const normalizedStatus = DRIVER_STATUS_ALIASES[requestedStatus] || requestedStatus;
+
+    if (!ALLOWED_DRIVER_STATUSES.has(normalizedStatus)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid status filter. Allowed values: ${ALLOWED_DRIVER_STATUS_FILTERS.join(', ')}`,
+      });
+    }
+
+    filter.status = normalizedStatus;
+  }
+
+  const total = await Driver.countDocuments(filter);
+  const drivers = await Driver.find(filter)
     .populate('user', 'name email phone')
     .populate('assignedVehicle', 'make model year licensePlate')
     .skip(startIndex)

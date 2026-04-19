@@ -87,6 +87,7 @@ const DriverListPage = () => {
                 <option value="">All</option>
                 <option value="active">Active</option>
                 <option value="available">Available</option>
+                <option value="working">Working</option>
                 <option value="on_trip">On Trip</option>
                 <option value="inactive">Inactive</option>
                 <option value="offline">Offline</option>
@@ -119,8 +120,16 @@ const DriverListPage = () => {
                     {drivers.map((d) => {
                       const name = d.name || d.user?.name || d.user?.email || 'N/A';
                       const license = d.licenseNumber || d.license || 'N/A';
-                      const vehicleName = d.vehicle
-                        ? `${d.vehicle.make || ''} ${d.vehicle.model || ''}`.trim() || 'Assigned'
+                      const assignedVehicle = d.assignedVehicle || d.vehicle || null;
+                      const vehicleId =
+                        assignedVehicle?._id ||
+                        (typeof assignedVehicle === 'string' ? assignedVehicle : null);
+                      const vehicleName = assignedVehicle
+                        ? (typeof assignedVehicle === 'object'
+                          ? `${assignedVehicle.make || ''} ${assignedVehicle.model || ''}`.trim() ||
+                            assignedVehicle.licensePlate ||
+                            'Assigned'
+                          : 'Assigned')
                         : 'Unassigned';
                       const status = d.status || 'active';
 
@@ -129,8 +138,8 @@ const DriverListPage = () => {
                           <td>{name}</td>
                           <td>{license}</td>
                           <td>
-                            {d.vehicle ? (
-                              <Link to={`/vehicles/${d.vehicle._id || d.vehicle}`}>
+                            {vehicleId ? (
+                              <Link to={`/vehicles/${vehicleId}`}>
                                 {vehicleName}
                               </Link>
                             ) : (
