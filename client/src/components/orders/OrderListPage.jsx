@@ -68,8 +68,10 @@ const OrderListPage = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const isAdmin = user.role === 'admin';
+  const isOwner = user.role === 'owner';
   const isCustomer = user.role === 'customer';
   const canApprove = isAdmin;
+  const canAssign = isAdmin || isOwner;
 
   const clearMessages = () => {
     setError('');
@@ -101,14 +103,14 @@ const OrderListPage = () => {
     setPage(1);
   }, [statusFilter]);
 
-  // Pre-load drivers for admin assign action
+  // Pre-load drivers for assign action
   useEffect(() => {
-    if (isAdmin) {
+    if (canAssign) {
       getDrivers({ limit: 100 })
         .then((res) => setDrivers(res.data.data || res.data.drivers || []))
         .catch(() => {});
     }
-  }, [isAdmin]);
+  }, [canAssign]);
 
   // Real-time updates
   useEffect(() => {
@@ -335,9 +337,7 @@ const OrderListPage = () => {
                                 Verify Payment
                               </button>
                             )}
-                            {isAdmin &&
-                              (order.status === 'approved' ||
-                                order.status === 'paid') && (
+                            {canAssign && order.status === 'approved' && (
                                 <button
                                   className="btn btn-sm btn-warning"
                                   onClick={() => openAssignModal(order)}

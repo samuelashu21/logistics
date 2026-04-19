@@ -52,9 +52,11 @@ const OrderDetailPage = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const isAdmin = user.role === 'admin';
+  const isOwner = user.role === 'owner';
   const isDriver = user.role === 'driver';
   const isCustomer = user.role === 'customer';
   const canApprove = isAdmin;
+  const canAssign = isAdmin || isOwner;
 
   const clearMessages = () => {
     setError('');
@@ -72,7 +74,7 @@ const OrderDetailPage = () => {
       setOrder(orderRes.data.data || orderRes.data);
       setHistory(historyRes.data.data || historyRes.data.history || []);
 
-      if (isAdmin) {
+      if (canAssign) {
         const driversRes = await getDrivers({ limit: 100 }).catch(() => ({
           data: { data: [] },
         }));
@@ -83,7 +85,7 @@ const OrderDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, isAdmin]);
+  }, [id, canAssign]);
 
   useEffect(() => {
     fetchOrder();
@@ -330,12 +332,10 @@ const OrderDetailPage = () => {
               )}
 
               {/* Assign driver for admin/owner */}
-               {isAdmin &&
-                 !order.driver &&
-                 order.status !== 'rejected' &&
-                 order.status !== 'cancelled' &&
-                order.status !== 'completed' && (
-                  <div className="mt-2">
+                {canAssign &&
+                  !order.driver &&
+                  order.status === 'approved' && (
+                   <div className="mt-2">
                     <label className="form-label">Assign Driver</label>
                     <div className="flex gap-1">
                       <select

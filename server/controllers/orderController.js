@@ -232,6 +232,13 @@ exports.rejectOrder = asyncHandler(async (req, res) => {
 // @route   PUT /api/v1/orders/:id/assign-driver
 exports.assignDriver = asyncHandler(async (req, res) => {
   const { driverId } = req.body;
+  
+  if (!['admin', 'owner'].includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      error: 'Not authorized to assign drivers',
+    });
+  }
 
   if (!driverId) {
     return res.status(400).json({
@@ -247,6 +254,16 @@ exports.assignDriver = asyncHandler(async (req, res) => {
       success: false,
       error: 'Order not found',
     });
+  }
+
+  if (req.user.role === 'owner') {
+    const ownerCheck = await ensureOwnerCanManageOrder(order, req.user.id, 'assign drivers to');
+    if (!ownerCheck.allowed) {
+      return res.status(403).json({
+        success: false,
+        error: ownerCheck.error,
+      });
+    }
   }
 
   if (order.status !== 'approved') {

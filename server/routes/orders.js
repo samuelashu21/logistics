@@ -38,7 +38,7 @@ router.route('/:id').get(protect, getOrder);
 router.put('/:id/status', protect, updateOrderStatus);
 router.put('/:id/approve', orderApprovalLimiter, protect, approveOrder);
 router.put('/:id/reject', orderApprovalLimiter, protect, rejectOrder);
-router.put('/:id/assign-driver', protect, authorize('admin'), assignDriver);
+router.put('/:id/assign-driver', protect, authorize('admin', 'owner'), assignDriver);
 router.put('/:id/verify-payment', protect, authorize('admin'), verifyPayment);
 
 module.exports = router;
