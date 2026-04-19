@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const Driver = require('../models/Driver');
 const Vehicle = require('../models/Vehicle');
+const mongoose = require('mongoose');
 
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -236,17 +237,20 @@ exports.rejectOrder = asyncHandler(async (req, res) => {
 exports.assignDriver = asyncHandler(async (req, res) => {
   const { driverId } = req.body;
 
-  if (!['admin', 'owner'].includes(req.user.role)) {
-    return res.status(403).json({
-      success: false,
-      error: 'Not authorized to assign drivers',
-    });
-  }
-
   if (!driverId) {
     return res.status(400).json({
       success: false,
       error: 'Please provide a driverId',
+    });
+  }
+
+  if (
+    !mongoose.Types.ObjectId.isValid(req.params.id) ||
+    !mongoose.Types.ObjectId.isValid(driverId)
+  ) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid order ID or driver ID',
     });
   }
 

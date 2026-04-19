@@ -134,10 +134,20 @@ const OrderCreatePage = () => {
 
     try {
       setSubmitting(true);
-      const [pickupLocation, dropoffLocation] = await Promise.all([
-        geocodeWithOpenStreetMap(formData.pickupAddress.trim()),
-        geocodeWithOpenStreetMap(formData.dropoffAddress.trim()),
-      ]);
+      let pickupLocation;
+      let dropoffLocation;
+
+      try {
+        pickupLocation = await geocodeWithOpenStreetMap(formData.pickupAddress.trim());
+      } catch (geocodeError) {
+        throw new Error('Pickup address could not be found on OpenStreetMap');
+      }
+
+      try {
+        dropoffLocation = await geocodeWithOpenStreetMap(formData.dropoffAddress.trim());
+      } catch (geocodeError) {
+        throw new Error('Delivery address could not be found on OpenStreetMap');
+      }
 
       const payload = {
         vehicle: formData.vehicle,
