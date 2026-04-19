@@ -287,6 +287,7 @@ const CustomerDashboard = ({ stats, recentOrders }) => (
     </div>
 
     <div className="flex gap-2 mb-3">
+      <Link to="/orders/new" className="btn btn-primary">Place Order</Link>
       <Link to="/orders" className="btn btn-primary">My Orders</Link>
       <Link to="/advertisements" className="btn btn-secondary">Browse Ads</Link>
     </div>

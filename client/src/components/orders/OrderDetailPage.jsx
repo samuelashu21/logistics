@@ -55,6 +55,7 @@ const OrderDetailPage = () => {
   const isOwner = user.role === 'owner';
   const isDriver = user.role === 'driver';
   const isCustomer = user.role === 'customer';
+  const canApprove = isAdmin || isOwner;
 
   const clearMessages = () => {
     setError('');
@@ -401,7 +402,7 @@ const OrderDetailPage = () => {
                 Verify Payment
               </button>
             )}
-            {isAdmin && order.status === 'paid' && (
+            {canApprove && order.status === 'paid' && (
               <>
                 <button
                   className="btn btn-secondary"

@@ -1,5 +1,6 @@
 const Order = require('../models/Order');
 const Driver = require('../models/Driver');
+const Vehicle = require('../models/Vehicle');
 
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -19,7 +20,6 @@ exports.getOrders = asyncHandler(async (req, res) => {
     filter.driver = req.user.id;
   } else if (req.user.role === 'owner') {
     // Owner sees orders for vehicles they own
-    const Vehicle = require('../models/Vehicle');
     const ownedVehicles = await Vehicle.find({ owner: req.user.id }).select('_id');
     const vehicleIds = ownedVehicles.map((v) => v._id);
     filter.vehicle = { $in: vehicleIds };
@@ -151,6 +151,23 @@ exports.approveOrder = asyncHandler(async (req, res) => {
     });
   }
 
+  if (req.user.role === 'owner') {
+    if (!order.vehicle) {
+      return res.status(403).json({
+        success: false,
+        error: 'Owners can only approve orders linked to their vehicles',
+      });
+    }
+
+    const vehicle = await Vehicle.findById(order.vehicle).select('owner');
+    if (!vehicle || vehicle.owner?.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to approve this order',
+      });
+    }
+  }
+
   order.status = 'approved';
   await order.save();
 
@@ -170,6 +187,23 @@ exports.rejectOrder = asyncHandler(async (req, res) => {
       success: false,
       error: 'Order not found',
     });
+  }
+
+  if (req.user.role === 'owner') {
+    if (!order.vehicle) {
+      return res.status(403).json({
+        success: false,
+        error: 'Owners can only reject orders linked to their vehicles',
+      });
+    }
+
+    const vehicle = await Vehicle.findById(order.vehicle).select('owner');
+    if (!vehicle || vehicle.owner?.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to reject this order',
+      });
+    }
   }
 
   order.status = 'rejected';

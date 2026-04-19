@@ -25,8 +25,8 @@ router
 router.route('/:id').get(protect, getOrder);
 
 router.put('/:id/status', protect, updateOrderStatus);
-router.put('/:id/approve', protect, authorize('admin'), approveOrder);
-router.put('/:id/reject', protect, authorize('admin'), rejectOrder);
+router.put('/:id/approve', protect, authorize('admin', 'owner'), approveOrder);
+router.put('/:id/reject', protect, authorize('admin', 'owner'), rejectOrder);
 router.put('/:id/assign-driver', protect, authorize('admin'), assignDriver);
 router.put('/:id/verify-payment', protect, authorize('admin'), verifyPayment);
 
