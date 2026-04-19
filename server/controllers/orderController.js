@@ -217,7 +217,7 @@ exports.approveOrder = asyncHandler(async (req, res) => {
     });
   }
 
-  order.status = 'approved';
+  order.status = 'assigned';
   await order.save();
 
   res.status(200).json({
@@ -326,6 +326,8 @@ exports.assignDriver = asyncHandler(async (req, res) => {
   }
 
   order.driver = driverId;
+  // Keep paid orders in paid status after assignment so admin approval can still validate
+  // the paid prerequisite; approved orders transition directly to assigned.
   if (order.status === 'approved') {
     order.status = 'assigned';
   }

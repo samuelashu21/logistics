@@ -479,7 +479,7 @@ const OrderDetailPage = () => {
                 </button>
               </>
             )}
-            {isDriver && ['assigned', 'approved'].includes(order.status) && (
+            {isDriver && order.status === 'assigned' && (
               <button
                 className="btn btn-primary"
                 onClick={() => handleAction('start')}
