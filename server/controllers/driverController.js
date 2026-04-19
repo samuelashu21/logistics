@@ -5,6 +5,14 @@ const User = require('../models/User');
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
+const DRIVER_STATUS_ALIASES = {
+  working: 'on_trip',
+  busy: 'on_trip',
+  active: 'available',
+  inactive: 'offline',
+};
+const ALLOWED_DRIVER_STATUSES = new Set(['available', 'on_trip', 'offline']);
+
 // @desc    Get all drivers
 // @route   GET /api/v1/drivers 
 exports.getDrivers = asyncHandler(async (req, res) => {
@@ -14,17 +22,10 @@ exports.getDrivers = asyncHandler(async (req, res) => {
   const filter = {};
 
   if (req.query.status) {
-    const statusAliases = {
-      working: 'on_trip',
-      busy: 'on_trip',
-      active: 'available',
-      inactive: 'offline',
-    };
-    const allowedStatuses = new Set(['available', 'on_trip', 'offline']);
     const requestedStatus = String(req.query.status).trim().toLowerCase();
-    const normalizedStatus = statusAliases[requestedStatus] || requestedStatus;
+    const normalizedStatus = DRIVER_STATUS_ALIASES[requestedStatus] || requestedStatus;
 
-    if (!allowedStatuses.has(normalizedStatus)) {
+    if (!ALLOWED_DRIVER_STATUSES.has(normalizedStatus)) {
       return res.status(400).json({
         success: false,
         error: 'Invalid status filter',
