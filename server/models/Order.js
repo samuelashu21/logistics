@@ -1,108 +1,60 @@
-const mongoose = require('mongoose');
+const express = require('express');
+const rateLimit = require('express-rate-limit');
+const {
+  getOrders,
+  getOrder,
+  createOrder,
+  updateOrderStatus,
+  approveOrder,
+  rejectOrder,
+  assignDriver,
+  verifyPayment,
+  getOrderHistory,
+} = require('../controllers/orderController');
+const { protect, authorize } = require('../middleware/auth');
 
-const OrderSchema = new mongoose.Schema({
-  customer: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: [true, 'Please add a customer'],
+const router = express.Router();
+const orderApprovalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: 'Too many order approval requests, please try again later',
   },
-  vehicle: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Vehicle',
-  },
-  driver: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  pickupLocation: {
-    address: {
-      type: String,
-      required: [true, 'Please add a pickup address'],
-    },
-    coordinates: {
-      type: { type: String, enum: ['Point'] },
-      coordinates: { type: [Number] },
-    },
-  },
-  dropoffLocation: {
-    address: {
-      type: String,
-      required: [true, 'Please add a dropoff address'],
-    },
-    coordinates: {
-      type: { type: String, enum: ['Point'] },
-      coordinates: { type: [Number] },
-    },
-  },
-  status: {
-    type: String,
-    enum: [
-      'requested',
-      'paid',
-      'approved',
-      'assigned',
-      'in_progress',
-      'completed',
-      'rejected',
-      'cancelled',
-    ],
-    default: 'requested',
-  },
-  paymentStatus: {
-    type: String,
-    enum: ['pending', 'verified', 'failed'],
-    default: 'pending',
-  },
-  paymentAmount: {
-    type: Number,
-  },
-  paymentConfirmation: {
-    type: String,
-  },
-  startTime: {
-    type: Date,
-  },
-  endTime: {
-    type: Date,
-  },
-  notes: {
-    type: String,
-    maxlength: [500, 'Notes cannot be more than 500 characters'],
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
+});
+const orderAssignmentLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: 'Too many driver assignment requests, please try again later',
   },
 });
 
-OrderSchema.index({ customer: 1 });
-OrderSchema.index({ driver: 1 });
-OrderSchema.index({ status: 1 });
-OrderSchema.index({ 'pickupLocation.coordinates': '2dsphere' });
-OrderSchema.index({ 'dropoffLocation.coordinates': '2dsphere' });
+// Must be before /:id to avoid matching "history" as an id
+router.get('/history', protect, getOrderHistory);
 
-const normalizeOptionalGeoPoint = (location) => {
-  if (!location || !location.coordinates) return;
+router
+  .route('/')
+  .get(protect, getOrders)
+  .post(protect, authorize('customer'), createOrder);
+ 
+router.route('/:id').get(protect, getOrder);
 
-  const point = location.coordinates;
-  const validArray =
-    Array.isArray(point.coordinates) &&
-    point.coordinates.length === 2 &&
-    point.coordinates.every((value) => Number.isFinite(value));
+router.put('/:id/status', protect, updateOrderStatus);
+router.put('/:id/approve', orderApprovalLimiter, protect, authorize('admin'), approveOrder);
+router.put('/:id/reject', orderApprovalLimiter, protect, rejectOrder);
+router.put(
+  '/:id/assign-driver',
+  orderAssignmentLimiter,
+  protect,
+  authorize('admin', 'owner'),
+  assignDriver
+);
+router.put('/:id/verify-payment', orderApprovalLimiter, protect, authorize('owner', 'admin'), verifyPayment);
 
-  if (!validArray) {
-    location.coordinates = undefined;
-    return;
-  }
-
-  if (!point.type) {
-    point.type = 'Point';
-  }
-};
-
-OrderSchema.pre('validate', function preValidateOrder() {
-  normalizeOptionalGeoPoint(this.pickupLocation);
-  normalizeOptionalGeoPoint(this.dropoffLocation);
-});
-
-module.exports = mongoose.model('Order', OrderSchema);
+module.exports = router;

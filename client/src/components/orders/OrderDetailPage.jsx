@@ -37,6 +37,29 @@ const STATUS_FLOW = [
   'completed',
 ];
 
+const paymentStatusLabel = (status) => {
+  const map = {
+    pending: 'Awaiting Verification',
+    verified: 'Payment Verified',
+    failed: 'Payment Failed',
+  };
+  return map[status] || 'Awaiting Verification';
+};
+
+const paymentTimelineLabel = (status) => {
+  if (status === 'verified') return 'Pending → Verified';
+  if (status === 'failed') return 'Pending → Failed';
+  return 'Pending (awaiting verification)';
+};
+
+const maskPaymentConfirmation = (value) => {
+  if (!value) return 'N/A';
+  if (value.length <= 4) {
+    return '*'.repeat(value.length);
+  }
+  return `${'*'.repeat(value.length - 4)}${value.slice(-4)}`;
+};
+
 const OrderDetailPage = () => {
   const { id } = useParams();
   const { user } = useAuth();
@@ -55,7 +78,13 @@ const OrderDetailPage = () => {
   const isOwner = user.role === 'owner';
   const isDriver = user.role === 'driver';
   const isCustomer = user.role === 'customer';
-  const canApprove = isAdmin || isOwner;
+  const canApprove = isAdmin;
+  const canVerifyPayment = isAdmin || isOwner;
+  const canAssign = isAdmin || isOwner;
+  const currentUserId = user?._id?.toString?.() || user?.id?.toString?.();
+  const isOrderCustomer =
+    order?.customer?._id?.toString?.() === currentUserId;
+  const canViewSensitivePaymentDetails = isAdmin || (isCustomer && isOrderCustomer);
 
   const clearMessages = () => {
     setError('');
@@ -73,7 +102,7 @@ const OrderDetailPage = () => {
       setOrder(orderRes.data.data || orderRes.data);
       setHistory(historyRes.data.data || historyRes.data.history || []);
 
-      if (isAdmin || isOwner) {
+      if (canAssign) {
         const driversRes = await getDrivers({ limit: 100 }).catch(() => ({
           data: { data: [] },
         }));
@@ -84,7 +113,7 @@ const OrderDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, isAdmin, isOwner]);
+  }, [id, canAssign]);
 
   useEffect(() => {
     fetchOrder();
@@ -118,8 +147,17 @@ const OrderDetailPage = () => {
           break;
         }
         case 'verify_payment':
-          await verifyPayment(id, { verified: true });
-          setSuccess('Payment verified');
+          {
+            const paymentConfirmation = window.prompt('Enter payment confirmation/reference:');
+            if (paymentConfirmation === null) return;
+            const confirmation = paymentConfirmation.trim();
+            if (!confirmation) {
+              setError('Payment confirmation is required');
+              return;
+            }
+            await verifyPayment(id, { paymentConfirmation: confirmation });
+          }
+          setSuccess('Payment approved and ready for admin review');
           break;
         case 'start':
           await updateOrderStatus(id, { status: 'in_progress' });
@@ -248,7 +286,30 @@ const OrderDetailPage = () => {
               label="Total Amount"
               value={`$${(order.totalAmount ?? 0).toLocaleString()}`}
             />
-            <InfoRow label="Payment Status" value={order.paymentStatus || 'pending'} />
+            <InfoRow
+              label="Payment Status"
+              value={paymentStatusLabel(order.paymentStatus || 'pending')}
+            />
+            <InfoRow
+              label="Payment Timeline"
+              value={paymentTimelineLabel(order.paymentStatus || 'pending')}
+            />
+            {canViewSensitivePaymentDetails && (
+              <InfoRow
+                label="Payment Amount"
+                value={
+                  order.paymentAmount != null
+                    ? `$${Number(order.paymentAmount).toLocaleString()}`
+                    : 'N/A'
+                }
+              />
+            )}
+            {canViewSensitivePaymentDetails && (
+              <InfoRow
+                label="Payment Confirmation"
+                value={maskPaymentConfirmation(order.paymentConfirmation)}
+              />
+            )}
             <InfoRow label="Pickup Address" value={order.pickupAddress} />
             <InfoRow label="Delivery Address" value={order.deliveryAddress} />
             <InfoRow
@@ -331,11 +392,9 @@ const OrderDetailPage = () => {
               )}
 
               {/* Assign driver for admin/owner */}
-              {(isAdmin || isOwner) &&
+              {canAssign &&
                 !order.driver &&
-                order.status !== 'rejected' &&
-                order.status !== 'cancelled' &&
-                order.status !== 'completed' && (
+                order.status === 'approved' && (
                   <div className="mt-2">
                     <label className="form-label">Assign Driver</label>
                     <div className="flex gap-1">
@@ -393,13 +452,13 @@ const OrderDetailPage = () => {
         </div>
         <div className="card-body">
           <div className="flex gap-1 flex-wrap">
-            {isAdmin && order.status === 'requested' && (
+            {canVerifyPayment && order.status === 'requested' && (
               <button
                 className="btn btn-outline"
                 onClick={() => handleAction('verify_payment')}
                 disabled={submitting}
               >
-                Verify Payment
+                Approve Payment
               </button>
             )}
             {canApprove && order.status === 'paid' && (

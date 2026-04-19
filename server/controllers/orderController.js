@@ -1,9 +1,38 @@
 const Order = require('../models/Order');
 const Driver = require('../models/Driver');
 const Vehicle = require('../models/Vehicle');
+const socketManager = require('../utils/socketManager');
+const { createNotification } = require('./notificationController');
 
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
+
+const getOrderCustomerId = (order) => {
+  if (!order?.customer) return null;
+  if (typeof order.customer === 'object') {
+    return order.customer._id?.toString?.() || null;
+  }
+  return order.customer.toString();
+};
+
+const canViewSensitivePaymentFields = (user, order) => {
+  if (!user || !order) return false;
+  if (user.role === 'admin') return true;
+  if (user.role !== 'customer') return false;
+  return getOrderCustomerId(order) === user.id;
+};
+
+const sanitizeOrderPaymentFields = (user, order) => {
+  const plainOrder = order?.toObject ? order.toObject() : order;
+  if (!plainOrder) return plainOrder;
+  if (canViewSensitivePaymentFields(user, plainOrder)) {
+    return plainOrder;
+  }
+
+  delete plainOrder.paymentAmount;
+  delete plainOrder.paymentConfirmation;
+  return plainOrder;
+};
 
 const ensureOwnerCanManageOrder = async (order, ownerId, action) => {
   if (!order.vehicle) {
@@ -57,7 +86,7 @@ exports.getOrders = asyncHandler(async (req, res) => {
     total,
     page,
     pages: Math.ceil(total / limit),
-    data: orders,
+    data: orders.map((order) => sanitizeOrderPaymentFields(req.user, order)),
   });
 });
 
@@ -78,7 +107,7 @@ exports.getOrder = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: order,
+    data: sanitizeOrderPaymentFields(req.user, order),
   });
 });
 
@@ -158,7 +187,7 @@ exports.updateOrderStatus = asyncHandler(async (req, res) => {
 // @desc    Approve order
 // @route   PUT /api/v1/orders/:id/approve
 exports.approveOrder = asyncHandler(async (req, res) => {
-  if (!['admin', 'owner'].includes(req.user.role)) {
+  if (req.user.role !== 'admin') {
     return res.status(403).json({
       success: false,
       error: 'Not authorized to approve orders',
@@ -174,14 +203,11 @@ exports.approveOrder = asyncHandler(async (req, res) => {
     });
   }
 
-  if (req.user.role === 'owner') {
-    const ownerCheck = await ensureOwnerCanManageOrder(order, req.user.id, 'approve');
-    if (!ownerCheck.allowed) {
-      return res.status(403).json({
-        success: false,
-        error: ownerCheck.error,
-      });
-    }
+  if (order.status !== 'paid' || order.paymentStatus !== 'verified') {
+    return res.status(400).json({
+      success: false,
+      error: 'Order payment must be owner-verified before approval',
+    });
   }
 
   order.status = 'approved';
@@ -252,12 +278,43 @@ exports.assignDriver = asyncHandler(async (req, res) => {
     });
   }
 
+  if (req.user.role === 'owner') {
+    const ownerCheck = await ensureOwnerCanManageOrder(order, req.user.id, 'assign drivers to');
+    if (!ownerCheck.allowed) {
+      return res.status(403).json({
+        success: false,
+        error: ownerCheck.error,
+      });
+    }
+  }
+
+  if (order.status !== 'approved') {
+    return res.status(400).json({
+      success: false,
+      error: 'Drivers can only be assigned to approved orders',
+    });
+  }
+
+  if (order.driver) {
+    return res.status(400).json({
+      success: false,
+      error: 'A driver is already assigned to this order',
+    });
+  }
+
   const driver = await Driver.findOne({ user: driverId });
 
   if (!driver) {
     return res.status(404).json({
       success: false,
       error: 'Driver profile not found for the given user',
+    });
+  }
+
+  if (!driver.isActive || driver.status !== 'available') {
+    return res.status(400).json({
+      success: false,
+      error: 'Driver must be active and available',
     });
   }
 
@@ -300,13 +357,66 @@ exports.verifyPayment = asyncHandler(async (req, res) => {
     });
   }
 
+  if (!['owner', 'admin'].includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      error: 'Only owners or admins can verify payment information',
+    });
+  }
+
+  if (req.user.role === 'owner') {
+    const ownerCheck = await ensureOwnerCanManageOrder(order, req.user.id, 'verify payment for');
+    if (!ownerCheck.allowed) {
+      return res.status(403).json({
+        success: false,
+        error: ownerCheck.error,
+      });
+    }
+  }
+
+  if (order.status !== 'requested' || order.paymentStatus !== 'pending') {
+    return res.status(400).json({
+      success: false,
+      error: 'Only requested orders with pending payment can be verified',
+    });
+  }
+
   order.paymentStatus = 'verified';
+  order.status = 'paid';
   order.paymentConfirmation = paymentConfirmation;
   await order.save();
 
+  if (order.customer) {
+    const customerId = getOrderCustomerId(order);
+    if (!customerId) {
+      return res.status(200).json({
+        success: true,
+        data: sanitizeOrderPaymentFields(req.user, order),
+      });
+    }
+
+    await createNotification(
+      customerId,
+      'payment_confirmation',
+      'Payment verified',
+      `Payment for order #${order._id.toString().slice(-6).toUpperCase()} has been verified and is awaiting admin approval.`,
+      order._id
+    );
+
+    try {
+      socketManager.getIO().to(customerId).emit('orderUpdate', {
+        orderId: order._id,
+        paymentStatus: order.paymentStatus,
+      });
+    } catch (err) {
+      // Socket.io may not be initialized in tests
+      console.error('Socket emit failed:', err.message);
+    }
+  }
+
   res.status(200).json({
     success: true,
-    data: order,
+    data: sanitizeOrderPaymentFields(req.user, order),
   });
 });
 

@@ -41,14 +41,21 @@ const statusBadgeClass = (status) => {
 
 const paymentBadge = (status) => {
   const map = {
-    paid: 'badge-success',
     verified: 'badge-success',
     pending: 'badge-warning',
-    unpaid: 'badge-danger',
     failed: 'badge-danger',
-    refunded: 'badge-info',
   };
   return map[status] || 'badge-warning';
+};
+
+const paymentStatusLabel = (status) => {
+  const map = {
+    pending: 'Awaiting Verification',
+    verified: 'Payment Verified',
+    failed: 'Payment Failed',
+  };
+  if (!status) return 'Awaiting Verification';
+  return map[status] || `Status: ${status}`;
 };
 
 const OrderListPage = () => {
@@ -70,7 +77,9 @@ const OrderListPage = () => {
   const isAdmin = user.role === 'admin';
   const isOwner = user.role === 'owner';
   const isCustomer = user.role === 'customer';
-  const canApprove = isAdmin || isOwner;
+  const canApprove = isAdmin;
+  const canVerifyPayment = isAdmin || isOwner;
+  const canAssign = isAdmin || isOwner;
 
   const clearMessages = () => {
     setError('');
@@ -102,14 +111,14 @@ const OrderListPage = () => {
     setPage(1);
   }, [statusFilter]);
 
-  // Pre-load drivers for admin assign action
+  // Pre-load drivers for assign action
   useEffect(() => {
-    if (isAdmin) {
+    if (canAssign) {
       getDrivers({ limit: 100 })
         .then((res) => setDrivers(res.data.data || res.data.drivers || []))
         .catch(() => {});
     }
-  }, [isAdmin]);
+  }, [canAssign]);
 
   // Real-time updates
   useEffect(() => {
@@ -154,11 +163,20 @@ const OrderListPage = () => {
   };
 
   const handleVerifyPayment = async (orderId) => {
+    const paymentConfirmation = window.prompt('Enter payment confirmation/reference:');
+    if (paymentConfirmation === null) return;
+
+    const confirmation = paymentConfirmation.trim();
+    if (!confirmation) {
+      setError('Payment confirmation is required');
+      return;
+    }
+
     try {
       setSubmitting(true);
       clearMessages();
-      await verifyPayment(orderId, { verified: true });
-      setSuccess('Payment verified');
+      await verifyPayment(orderId, { paymentConfirmation: confirmation });
+      setSuccess('Payment approved and ready for admin review');
       fetchOrders();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to verify payment');
@@ -298,7 +316,7 @@ const OrderListPage = () => {
                           <span
                             className={`badge ${paymentBadge(order.paymentStatus || 'pending')}`}
                           >
-                            {order.paymentStatus || 'pending'}
+                            {paymentStatusLabel(order.paymentStatus || 'pending')}
                           </span>
                         </td>
                         <td>
@@ -325,7 +343,7 @@ const OrderListPage = () => {
                                 </button>
                               </>
                             )}
-                            {isAdmin && order.status === 'requested' && (
+                            {canVerifyPayment && order.status === 'requested' && (
                               <button
                                 className="btn btn-sm btn-outline"
                                 onClick={() =>
@@ -333,12 +351,10 @@ const OrderListPage = () => {
                                 }
                                 disabled={submitting}
                               >
-                                Verify Payment
+                                Approve Payment
                               </button>
                             )}
-                            {isAdmin &&
-                              (order.status === 'approved' ||
-                                order.status === 'paid') && (
+                            {canAssign && order.status === 'approved' && (
                                 <button
                                   className="btn btn-sm btn-warning"
                                   onClick={() => openAssignModal(order)}
