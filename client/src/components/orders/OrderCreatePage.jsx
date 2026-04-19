@@ -8,6 +8,40 @@ import {
 } from '../../services/api';
 import Spinner from '../common/Spinner';
 
+const geocodeWithOpenStreetMap = async (address) => {
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(address)}`;
+  const response = await fetch(url, {
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to geocode address');
+  }
+
+  const results = await response.json();
+  if (!Array.isArray(results) || results.length === 0) {
+    throw new Error('Address not found');
+  }
+
+  const topResult = results[0];
+  const latitude = Number(topResult.lat);
+  const longitude = Number(topResult.lon);
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    throw new Error('Invalid coordinates returned');
+  }
+
+  return {
+    address: topResult.display_name || address,
+    coordinates: {
+      type: 'Point',
+      coordinates: [longitude, latitude],
+    },
+  };
+};
+
 const OrderCreatePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -100,10 +134,15 @@ const OrderCreatePage = () => {
 
     try {
       setSubmitting(true);
+      const [pickupLocation, dropoffLocation] = await Promise.all([
+        geocodeWithOpenStreetMap(formData.pickupAddress.trim()),
+        geocodeWithOpenStreetMap(formData.dropoffAddress.trim()),
+      ]);
+
       const payload = {
         vehicle: formData.vehicle,
-        pickupLocation: { address: formData.pickupAddress },
-        dropoffLocation: { address: formData.dropoffAddress },
+        pickupLocation,
+        dropoffLocation,
         notes: formData.notes || undefined,
       };
 
@@ -115,7 +154,12 @@ const OrderCreatePage = () => {
       const order = res.data?.data || res.data?.order || res.data;
       navigate(order?._id ? `/orders/${order._id}` : '/orders');
     } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to create order');
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          err.message ||
+          'Failed to create order'
+      );
     } finally {
       setSubmitting(false);
     }

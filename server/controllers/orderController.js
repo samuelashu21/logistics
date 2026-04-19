@@ -236,6 +236,13 @@ exports.rejectOrder = asyncHandler(async (req, res) => {
 exports.assignDriver = asyncHandler(async (req, res) => {
   const { driverId } = req.body;
 
+  if (!['admin', 'owner'].includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      error: 'Not authorized to assign drivers',
+    });
+  }
+
   if (!driverId) {
     return res.status(400).json({
       success: false,
@@ -252,16 +259,29 @@ exports.assignDriver = asyncHandler(async (req, res) => {
     });
   }
 
-  const driver = await Driver.findOne({ user: driverId });
+  if (req.user.role === 'owner') {
+    const ownerCheck = await ensureOwnerCanManageOrder(order, req.user.id, 'assign');
+    if (!ownerCheck.allowed) {
+      return res.status(403).json({
+        success: false,
+        error: ownerCheck.error,
+      });
+    }
+  }
+
+  let driver = await Driver.findById(driverId);
+  if (!driver) {
+    driver = await Driver.findOne({ user: driverId });
+  }
 
   if (!driver) {
     return res.status(404).json({
       success: false,
-      error: 'Driver profile not found for the given user',
+      error: 'Driver profile not found for the given identifier',
     });
   }
 
-  order.driver = driverId;
+  order.driver = driver.user;
   order.status = 'assigned';
   await order.save();
 

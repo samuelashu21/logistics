@@ -118,7 +118,7 @@ const OrderDetailPage = () => {
           break;
         }
         case 'verify_payment':
-          await verifyPayment(id, { verified: true });
+          await verifyPayment(id, { paymentConfirmation: 'verified_by_admin' });
           setSuccess('Payment verified');
           break;
         case 'start':
@@ -346,7 +346,7 @@ const OrderDetailPage = () => {
                       >
                         <option value="">Select driver...</option>
                         {drivers.map((d) => (
-                          <option key={d._id} value={d._id}>
+                          <option key={d._id} value={d.user?._id || d.user || d._id}>
                             {d.name ||
                               d.user?.name ||
                               d.user?.email ||

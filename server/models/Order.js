@@ -73,6 +73,9 @@ const OrderSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+}, {
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
 });
 
 OrderSchema.index({ customer: 1 });
@@ -103,6 +106,18 @@ const normalizeOptionalGeoPoint = (location) => {
 OrderSchema.pre('validate', function preValidateOrder() {
   normalizeOptionalGeoPoint(this.pickupLocation);
   normalizeOptionalGeoPoint(this.dropoffLocation);
+});
+
+OrderSchema.virtual('pickupAddress').get(function pickupAddressVirtual() {
+  return this.pickupLocation?.address;
+});
+
+OrderSchema.virtual('deliveryAddress').get(function deliveryAddressVirtual() {
+  return this.dropoffLocation?.address;
+});
+
+OrderSchema.virtual('totalAmount').get(function totalAmountVirtual() {
+  return this.paymentAmount ?? 0;
 });
 
 module.exports = mongoose.model('Order', OrderSchema);

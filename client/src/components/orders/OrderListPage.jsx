@@ -157,7 +157,7 @@ const OrderListPage = () => {
     try {
       setSubmitting(true);
       clearMessages();
-      await verifyPayment(orderId, { verified: true });
+      await verifyPayment(orderId, { paymentConfirmation: 'verified_by_admin' });
       setSuccess('Payment verified');
       fetchOrders();
     } catch (err) {
@@ -423,7 +423,7 @@ const OrderListPage = () => {
                 >
                   <option value="">Choose a driver...</option>
                   {drivers.map((d) => (
-                    <option key={d._id} value={d._id}>
+                    <option key={d._id} value={d.user?._id || d.user || d._id}>
                       {d.name || d.user?.name || d.user?.email || d._id}
                     </option>
                   ))}
