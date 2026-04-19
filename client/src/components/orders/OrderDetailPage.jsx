@@ -46,12 +46,18 @@ const paymentStatusLabel = (status) => {
   return map[status] || 'Awaiting Verification';
 };
 
+const paymentTimelineLabel = (status) => {
+  if (status === 'verified') return 'Pending → Verified';
+  if (status === 'failed') return 'Pending → Failed';
+  return 'Pending (awaiting verification)';
+};
+
 const maskPaymentConfirmation = (value) => {
   if (!value) return 'N/A';
-  if (value.length <= 6) {
-    return `${'*'.repeat(Math.max(value.length - 2, 0))}${value.slice(-2)}`;
+  if (value.length <= 4) {
+    return '*'.repeat(value.length);
   }
-  return `${value.slice(0, 3)}${'*'.repeat(value.length - 6)}${value.slice(-3)}`;
+  return `${'*'.repeat(value.length - 4)}${value.slice(-4)}`;
 };
 
 const OrderDetailPage = () => {
@@ -74,7 +80,9 @@ const OrderDetailPage = () => {
   const isCustomer = user.role === 'customer';
   const canApprove = isAdmin;
   const canAssign = isAdmin || isOwner;
-  const isOrderOwner = order?.customer?._id === user?._id;
+  const currentUserId = user?._id?.toString?.() || user?.id?.toString?.();
+  const isOrderOwner =
+    order?.customer?._id?.toString?.() === currentUserId;
   const canViewSensitivePaymentDetails = isAdmin || (isCustomer && isOrderOwner);
 
   const clearMessages = () => {
@@ -283,7 +291,7 @@ const OrderDetailPage = () => {
             />
             <InfoRow
               label="Payment Timeline"
-              value={`Pending → ${paymentStatusLabel(order.paymentStatus || 'pending')}`}
+              value={paymentTimelineLabel(order.paymentStatus || 'pending')}
             />
             {canViewSensitivePaymentDetails && (
               <InfoRow

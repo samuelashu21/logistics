@@ -46,7 +46,7 @@ router
 router.route('/:id').get(protect, getOrder);
 
 router.put('/:id/status', protect, updateOrderStatus);
-router.put('/:id/approve', orderApprovalLimiter, protect, approveOrder);
+router.put('/:id/approve', orderApprovalLimiter, protect, authorize('admin'), approveOrder);
 router.put('/:id/reject', orderApprovalLimiter, protect, rejectOrder);
 router.put(
   '/:id/assign-driver',

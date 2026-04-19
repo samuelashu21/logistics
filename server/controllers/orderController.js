@@ -362,8 +362,16 @@ exports.verifyPayment = asyncHandler(async (req, res) => {
   await order.save();
 
   if (order.customer) {
+    const customerId = getOrderCustomerId(order);
+    if (!customerId) {
+      return res.status(200).json({
+        success: true,
+        data: sanitizeOrderPaymentFields(req.user, order),
+      });
+    }
+
     await createNotification(
-      order.customer,
+      customerId,
       'payment_confirmation',
       'Payment verified',
       `Payment for order #${order._id.toString().slice(-6).toUpperCase()} has been verified.`,
@@ -371,7 +379,7 @@ exports.verifyPayment = asyncHandler(async (req, res) => {
     );
 
     try {
-      socketManager.getIO().to(order.customer.toString()).emit('orderUpdate', {
+      socketManager.getIO().to(customerId).emit('orderUpdate', {
         orderId: order._id,
         paymentStatus: order.paymentStatus,
       });
@@ -383,7 +391,7 @@ exports.verifyPayment = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: order,
+    data: sanitizeOrderPaymentFields(req.user, order),
   });
 });
 

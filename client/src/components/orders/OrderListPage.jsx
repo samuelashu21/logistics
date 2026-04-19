@@ -54,7 +54,8 @@ const paymentStatusLabel = (status) => {
     verified: 'Payment Verified',
     failed: 'Payment Failed',
   };
-  return map[status] || 'Awaiting Verification';
+  if (!status) return 'Awaiting Verification';
+  return map[status] || `Status: ${status}`;
 };
 
 const OrderListPage = () => {
