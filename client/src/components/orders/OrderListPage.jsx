@@ -78,6 +78,7 @@ const OrderListPage = () => {
   const isOwner = user.role === 'owner';
   const isCustomer = user.role === 'customer';
   const canApprove = isAdmin;
+  const canVerifyPayment = isAdmin || isOwner;
   const canAssign = isAdmin || isOwner;
 
   const clearMessages = () => {
@@ -342,7 +343,7 @@ const OrderListPage = () => {
                                 </button>
                               </>
                             )}
-                            {isOwner && order.status === 'requested' && (
+                            {canVerifyPayment && order.status === 'requested' && (
                               <button
                                 className="btn btn-sm btn-outline"
                                 onClick={() =>

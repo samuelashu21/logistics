@@ -79,6 +79,7 @@ const OrderDetailPage = () => {
   const isDriver = user.role === 'driver';
   const isCustomer = user.role === 'customer';
   const canApprove = isAdmin;
+  const canVerifyPayment = isAdmin || isOwner;
   const canAssign = isAdmin || isOwner;
   const currentUserId = user?._id?.toString?.() || user?.id?.toString?.();
   const isOrderCustomer =
@@ -451,7 +452,7 @@ const OrderDetailPage = () => {
         </div>
         <div className="card-body">
           <div className="flex gap-1 flex-wrap">
-            {isOwner && order.status === 'requested' && (
+            {canVerifyPayment && order.status === 'requested' && (
               <button
                 className="btn btn-outline"
                 onClick={() => handleAction('verify_payment')}

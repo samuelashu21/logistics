@@ -357,19 +357,21 @@ exports.verifyPayment = asyncHandler(async (req, res) => {
     });
   }
 
-  if (req.user.role !== 'owner') {
+  if (!['owner', 'admin'].includes(req.user.role)) {
     return res.status(403).json({
       success: false,
-      error: 'Only owners can verify payment information',
+      error: 'Only owners or admins can verify payment information',
     });
   }
 
-  const ownerCheck = await ensureOwnerCanManageOrder(order, req.user.id, 'verify payment for');
-  if (!ownerCheck.allowed) {
-    return res.status(403).json({
-      success: false,
-      error: ownerCheck.error,
-    });
+  if (req.user.role === 'owner') {
+    const ownerCheck = await ensureOwnerCanManageOrder(order, req.user.id, 'verify payment for');
+    if (!ownerCheck.allowed) {
+      return res.status(403).json({
+        success: false,
+        error: ownerCheck.error,
+      });
+    }
   }
 
   if (order.status !== 'requested' || order.paymentStatus !== 'pending') {
