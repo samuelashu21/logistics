@@ -394,7 +394,7 @@ const OrderDetailPage = () => {
               {/* Assign driver for admin/owner */}
               {canAssign &&
                 !order.driver &&
-                order.status === 'approved' && (
+                ['paid', 'approved'].includes(order.status) && (
                   <div className="mt-2">
                     <label className="form-label">Assign Driver</label>
                     <div className="flex gap-1">
@@ -461,7 +461,7 @@ const OrderDetailPage = () => {
                 Approve Payment
               </button>
             )}
-            {canApprove && order.status === 'paid' && (
+            {canApprove && order.status === 'paid' && order.driver && (
               <>
                 <button
                   className="btn btn-secondary"

@@ -325,7 +325,7 @@ const OrderListPage = () => {
                         <td>
                           <div className="flex gap-1 flex-wrap">
                             {/* Admin actions */}
-                            {canApprove && order.status === 'paid' && (
+                            {canApprove && order.status === 'paid' && order.driver && (
                               <>
                                 <button
                                   className="btn btn-sm btn-secondary"
@@ -354,7 +354,7 @@ const OrderListPage = () => {
                                 Approve Payment
                               </button>
                             )}
-                            {canAssign && order.status === 'approved' && (
+                            {canAssign && !order.driver && ['paid', 'approved'].includes(order.status) && (
                                 <button
                                   className="btn btn-sm btn-warning"
                                   onClick={() => openAssignModal(order)}
