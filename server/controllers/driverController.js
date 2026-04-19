@@ -20,8 +20,18 @@ exports.getDrivers = asyncHandler(async (req, res) => {
       active: 'available',
       inactive: 'offline',
     };
+    const allowedStatuses = new Set(['available', 'on_trip', 'offline']);
     const requestedStatus = String(req.query.status).trim().toLowerCase();
-    filter.status = statusAliases[requestedStatus] || requestedStatus;
+    const normalizedStatus = statusAliases[requestedStatus] || requestedStatus;
+
+    if (!allowedStatuses.has(normalizedStatus)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid status filter',
+      });
+    }
+
+    filter.status = normalizedStatus;
   }
 
   const total = await Driver.countDocuments(filter);
