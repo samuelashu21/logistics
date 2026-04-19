@@ -11,9 +11,21 @@ exports.getDrivers = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 25;
   const startIndex = (page - 1) * limit;
+  const filter = {};
 
-  const total = await Driver.countDocuments();
-  const drivers = await Driver.find()
+  if (req.query.status) {
+    const statusAliases = {
+      working: 'on_trip',
+      busy: 'on_trip',
+      active: 'available',
+      inactive: 'offline',
+    };
+    const requestedStatus = String(req.query.status).trim().toLowerCase();
+    filter.status = statusAliases[requestedStatus] || requestedStatus;
+  }
+
+  const total = await Driver.countDocuments(filter);
+  const drivers = await Driver.find(filter)
     .populate('user', 'name email phone')
     .populate('assignedVehicle', 'make model year licensePlate')
     .skip(startIndex)

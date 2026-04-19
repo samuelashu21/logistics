@@ -87,6 +87,7 @@ const DriverListPage = () => {
                 <option value="">All</option>
                 <option value="active">Active</option>
                 <option value="available">Available</option>
+                <option value="working">Working</option>
                 <option value="on_trip">On Trip</option>
                 <option value="inactive">Inactive</option>
                 <option value="offline">Offline</option>
