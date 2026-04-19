@@ -178,8 +178,7 @@ const VehicleDetailPage = () => {
     try {
       setSubmitting(true);
       setError('');
-      // Note: Ensure your API service expects (vehicleId, driverId)
-      await assignDriver(id, { driverId: selectedDriver });
+      await assignDriver(id, selectedDriver);
       setSuccess('Driver assigned successfully');
       setSelectedDriver('');
       fetchVehicle();
@@ -375,8 +374,8 @@ const VehicleDetailPage = () => {
                       onChange={(e) => setSelectedDriver(e.target.value)}
                     >
                       <option value="">Select driver...</option>
-                      {drivers.map((d) => (
-                        <option key={d._id} value={d._id}>
+                      {drivers.filter((d) => d.user?._id).map((d) => (
+                        <option key={d._id} value={d.user._id}>
                           {d.name || d.user?.name || d.user?.email}
                         </option>
                       ))}

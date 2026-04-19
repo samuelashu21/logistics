@@ -9,7 +9,7 @@ import {
   getDrivers,
 } from '../../services/api';
 import Spinner from '../common/Spinner';
- 
+  
 const StatCard = ({ title, value, icon, color, link }) => (
   <div className="card">
     <div className="card-body">

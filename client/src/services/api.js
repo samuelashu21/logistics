@@ -107,7 +107,7 @@ export const markAllAsRead = () => api.put('/notifications/read-all');
 export const deleteNotification = (id) => api.delete(`/notifications/${id}`);
 export const getUnreadCount = () => api.get('/notifications/unread-count');
 
-// ===== Tracking =====
+// ===== Tracking ===== 
 export const updateLocation = (data) => api.post('/tracking/location', data);
 export const getVehicleLocation = (vehicleId) =>
   api.get(`/tracking/vehicles/${vehicleId}/location`);
