@@ -217,7 +217,7 @@ exports.approveOrder = asyncHandler(async (req, res) => {
     });
   }
 
-  order.status = 'approved';
+  order.status = 'assigned';
   await order.save();
 
   res.status(200).json({
@@ -328,8 +328,6 @@ exports.assignDriver = asyncHandler(async (req, res) => {
   order.driver = driverId;
   if (order.status === 'approved') {
     order.status = 'assigned';
-  } else if (order.status === 'paid') {
-    order.status = 'paid';
   }
   await order.save();
 

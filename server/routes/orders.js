@@ -55,6 +55,6 @@ router.put(
   authorize('admin', 'owner'),
   assignDriver
 );
-router.put('/:id/verify-payment', orderApprovalLimiter, protect, authorize('owner', 'admin'), verifyPayment);
+router.put('/:id/verify-payment', orderApprovalLimiter, protect, authorize('admin', 'owner'), verifyPayment);
 
 module.exports = router;
