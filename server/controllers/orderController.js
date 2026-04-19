@@ -177,7 +177,7 @@ exports.approveOrder = asyncHandler(async (req, res) => {
   if (order.status !== 'paid') {
     return res.status(400).json({
       success: false,
-      error: 'Only paid orders can be approved',
+      error: 'Order must be in paid status before approval',
     });
   }
 
@@ -275,7 +275,7 @@ exports.assignDriver = asyncHandler(async (req, res) => {
   if (!driver.isActive || driver.status !== 'available') {
     return res.status(400).json({
       success: false,
-      error: 'Selected driver is not available',
+      error: 'Driver must be active and have available status',
     });
   }
 
