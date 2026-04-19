@@ -11,10 +11,13 @@ const GeoPointSchema = new mongoose.Schema(
       type: [Number],
       required: [true, 'Please add coordinates'],
       validate: {
-        validator: (value) =>
-          Array.isArray(value)
-          && value.length === 2
-          && value.every((num) => Number.isFinite(num)),
+        validator: (value) => {
+          return (
+            Array.isArray(value)
+            && value.length === 2
+            && value.every((num) => Number.isFinite(num))
+          );
+        },
         message: 'Coordinates must be an array of two numbers [longitude, latitude]',
       },
     },

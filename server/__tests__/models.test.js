@@ -293,11 +293,11 @@ describe('Order Model Validation', () => {
       customer: validCustomerId,
       pickupLocation: {
         address: '123 Main St',
-        coordinates: { type: 'Point', coordinates: [38.74, 9.03] },
+        coordinates: { type: 'Point', coordinates: [120.5, 35.6] },
       },
       dropoffLocation: {
         address: '456 Oak Ave',
-        coordinates: { type: 'Point', coordinates: [39.28, 11.83] },
+        coordinates: { type: 'Point', coordinates: [121.7, 36.2] },
       },
     });
 
