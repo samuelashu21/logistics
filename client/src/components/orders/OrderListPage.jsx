@@ -176,7 +176,7 @@ const OrderListPage = () => {
       setSubmitting(true);
       clearMessages();
       await verifyPayment(orderId, { paymentConfirmation: confirmation });
-      setSuccess('Payment approved and ready for admin review');
+      setSuccess('Payment verified and ready for admin review');
       fetchOrders();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to verify payment');
@@ -351,7 +351,7 @@ const OrderListPage = () => {
                                 }
                                 disabled={submitting}
                               >
-                                Approve Payment
+                                Verify Payment
                               </button>
                             )}
                             {canAssign &&

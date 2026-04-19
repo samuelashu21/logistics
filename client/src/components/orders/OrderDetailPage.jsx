@@ -157,7 +157,7 @@ const OrderDetailPage = () => {
             }
             await verifyPayment(id, { paymentConfirmation: confirmation });
           }
-          setSuccess('Payment approved and ready for admin review');
+          setSuccess('Payment verified and ready for admin review');
           break;
         case 'start':
           await updateOrderStatus(id, { status: 'in_progress' });
@@ -458,7 +458,7 @@ const OrderDetailPage = () => {
                 onClick={() => handleAction('verify_payment')}
                 disabled={submitting}
               >
-                Approve Payment
+                Verify Payment
               </button>
             )}
             {canApprove && order.status === 'paid' && order.driver && (
@@ -479,7 +479,7 @@ const OrderDetailPage = () => {
                 </button>
               </>
             )}
-            {isDriver && order.status === 'assigned' && (
+            {isDriver && (order.status === 'assigned' || order.status === 'approved') && (
               <button
                 className="btn btn-primary"
                 onClick={() => handleAction('start')}
