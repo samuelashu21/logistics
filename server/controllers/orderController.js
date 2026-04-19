@@ -292,7 +292,7 @@ exports.assignDriver = asyncHandler(async (req, res) => {
   if (!driver.isActive || driver.status !== 'available') {
     return res.status(400).json({
       success: false,
-      error: 'Driver must be active and have available status',
+      error: 'Driver must be active and available',
     });
   }
 
