@@ -295,10 +295,10 @@ exports.assignDriver = asyncHandler(async (req, res) => {
     }
   }
 
-  if (!['paid', 'approved'].includes(order.status)) {
+  if (order.status !== 'paid') {
     return res.status(400).json({
       success: false,
-      error: 'Drivers can only be assigned to paid or approved orders',
+      error: 'Drivers can only be assigned to paid orders',
     });
   }
 
@@ -326,9 +326,6 @@ exports.assignDriver = asyncHandler(async (req, res) => {
   }
 
   order.driver = driverId;
-  if (order.status === 'approved') {
-    order.status = 'assigned';
-  }
   await order.save();
 
   driver.status = 'on_trip';
@@ -408,7 +405,7 @@ exports.verifyPayment = asyncHandler(async (req, res) => {
       customerId,
       'payment_confirmation',
       'Payment verified',
-      `Payment for order #${order._id.toString().slice(-6).toUpperCase()} has been verified and is awaiting admin approval.`,
+      `Payment for order #${order._id.toString().slice(-6).toUpperCase()} has been verified and is awaiting driver assignment and admin approval.`,
       order._id
     );
 

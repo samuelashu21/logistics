@@ -354,9 +354,7 @@ const OrderListPage = () => {
                                 Verify Payment
                               </button>
                             )}
-                            {canAssign &&
-                              !order.driver &&
-                              (order.status === 'paid' || order.status === 'approved') && (
+                            {canAssign && !order.driver && order.status === 'paid' && (
                                 <button
                                   className="btn btn-sm btn-warning"
                                   onClick={() => openAssignModal(order)}

@@ -394,7 +394,7 @@ const OrderDetailPage = () => {
               {/* Assign driver for admin/owner */}
               {canAssign &&
                 !order.driver &&
-                (order.status === 'paid' || order.status === 'approved') && (
+                order.status === 'paid' && (
                   <div className="mt-2">
                     <label className="form-label">Assign Driver</label>
                     <div className="flex gap-1">
