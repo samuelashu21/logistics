@@ -68,7 +68,9 @@ const OrderListPage = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const isAdmin = user.role === 'admin';
+  const isOwner = user.role === 'owner';
   const isCustomer = user.role === 'customer';
+  const canApprove = isAdmin || isOwner;
 
   const clearMessages = () => {
     setError('');
@@ -206,6 +208,11 @@ const OrderListPage = () => {
       <div className="page-header mb-2">
         <div className="flex-between">
           <h1>Orders</h1>
+          {isCustomer && (
+            <Link to="/orders/new" className="btn btn-primary">
+              + Place Order
+            </Link>
+          )}
         </div>
       </div>
 
@@ -300,7 +307,7 @@ const OrderListPage = () => {
                         <td>
                           <div className="flex gap-1 flex-wrap">
                             {/* Admin actions */}
-                            {isAdmin && order.status === 'paid' && (
+                            {canApprove && order.status === 'paid' && (
                               <>
                                 <button
                                   className="btn btn-sm btn-secondary"
