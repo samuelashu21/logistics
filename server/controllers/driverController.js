@@ -26,7 +26,14 @@ exports.getDrivers = asyncHandler(async (req, res) => {
   const filter = {};
 
   if (req.query.status) {
-    const requestedStatus = String(req.query.status).trim().toLowerCase();
+    if (typeof req.query.status !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid status filter. Allowed values: ${ALLOWED_DRIVER_STATUS_FILTERS.join(', ')}`,
+      });
+    }
+
+    const requestedStatus = req.query.status.trim().toLowerCase();
     const normalizedStatus = DRIVER_STATUS_ALIASES[requestedStatus] || requestedStatus;
 
     if (!ALLOWED_DRIVER_STATUSES.has(normalizedStatus)) {
