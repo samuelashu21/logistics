@@ -175,7 +175,7 @@ const OrderListPage = () => {
       setSubmitting(true);
       clearMessages();
       await verifyPayment(orderId, { paymentConfirmation: confirmation });
-      setSuccess('Payment verified');
+      setSuccess('Payment approved and ready for admin review');
       fetchOrders();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to verify payment');
@@ -342,7 +342,7 @@ const OrderListPage = () => {
                                 </button>
                               </>
                             )}
-                            {isAdmin && order.status === 'requested' && (
+                            {isOwner && order.status === 'requested' && (
                               <button
                                 className="btn btn-sm btn-outline"
                                 onClick={() =>
@@ -350,7 +350,7 @@ const OrderListPage = () => {
                                 }
                                 disabled={submitting}
                               >
-                                Verify Payment
+                                Approve Payment
                               </button>
                             )}
                             {canAssign && order.status === 'approved' && (

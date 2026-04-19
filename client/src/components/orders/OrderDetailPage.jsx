@@ -156,7 +156,7 @@ const OrderDetailPage = () => {
             }
             await verifyPayment(id, { paymentConfirmation: confirmation });
           }
-          setSuccess('Payment verified');
+          setSuccess('Payment approved and ready for admin review');
           break;
         case 'start':
           await updateOrderStatus(id, { status: 'in_progress' });
@@ -451,13 +451,13 @@ const OrderDetailPage = () => {
         </div>
         <div className="card-body">
           <div className="flex gap-1 flex-wrap">
-            {isAdmin && order.status === 'requested' && (
+            {isOwner && order.status === 'requested' && (
               <button
                 className="btn btn-outline"
                 onClick={() => handleAction('verify_payment')}
                 disabled={submitting}
               >
-                Verify Payment
+                Approve Payment
               </button>
             )}
             {canApprove && order.status === 'paid' && (

@@ -203,10 +203,10 @@ exports.approveOrder = asyncHandler(async (req, res) => {
     });
   }
 
-  if (order.status !== 'paid') {
+  if (order.status !== 'paid' || order.paymentStatus !== 'verified') {
     return res.status(400).json({
       success: false,
-      error: 'Order must be in paid status before approval',
+      error: 'Order payment must be owner-verified before approval',
     });
   }
 
@@ -357,7 +357,30 @@ exports.verifyPayment = asyncHandler(async (req, res) => {
     });
   }
 
+  if (req.user.role !== 'owner') {
+    return res.status(403).json({
+      success: false,
+      error: 'Only owners can verify payment information',
+    });
+  }
+
+  const ownerCheck = await ensureOwnerCanManageOrder(order, req.user.id, 'verify payment for');
+  if (!ownerCheck.allowed) {
+    return res.status(403).json({
+      success: false,
+      error: ownerCheck.error,
+    });
+  }
+
+  if (order.status !== 'requested' || order.paymentStatus !== 'pending') {
+    return res.status(400).json({
+      success: false,
+      error: 'Only requested orders with pending payment can be verified',
+    });
+  }
+
   order.paymentStatus = 'verified';
+  order.status = 'paid';
   order.paymentConfirmation = paymentConfirmation;
   await order.save();
 
@@ -374,7 +397,7 @@ exports.verifyPayment = asyncHandler(async (req, res) => {
       customerId,
       'payment_confirmation',
       'Payment verified',
-      `Payment for order #${order._id.toString().slice(-6).toUpperCase()} has been verified.`,
+      `Payment for order #${order._id.toString().slice(-6).toUpperCase()} has been verified and is awaiting admin approval.`,
       order._id
     );
 
