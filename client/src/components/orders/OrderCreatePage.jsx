@@ -35,14 +35,29 @@ const OrderCreatePage = () => {
         setLoading(true);
         setError('');
         setAdError('');
-        const [vehiclesRes, adRes] = await Promise.all([
-          getVehicles({ limit: 200 }),
+        const loadAllVehicles = async () => {
+          const pageSize = 100;
+          let page = 1;
+          let allVehicles = [];
+
+          while (true) {
+            const res = await getVehicles({ page, limit: pageSize });
+            const batch = res.data?.data || [];
+            allVehicles = allVehicles.concat(batch);
+            if (batch.length < pageSize) break;
+            page += 1;
+          }
+
+          return allVehicles;
+        };
+
+        const [vehicleData, adRes] = await Promise.all([
+          loadAllVehicles(),
           advertisementId
             ? getAdvertisement(advertisementId).catch(() => null)
             : Promise.resolve(null),
         ]);
 
-        const vehicleData = vehiclesRes.data?.data || [];
         setVehicles(vehicleData);
 
         if (adRes?.data) {
@@ -79,7 +94,7 @@ const OrderCreatePage = () => {
     setError('');
 
     if (!formData.vehicle || !formData.pickupAddress || !formData.dropoffAddress) {
-      setError('Please fill vehicle, pickup address, and dropoff address');
+      setError('Please provide vehicle, pickup address, and dropoff address');
       return;
     }
 

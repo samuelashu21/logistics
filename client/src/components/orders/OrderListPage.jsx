@@ -337,8 +337,8 @@ const OrderListPage = () => {
                               </button>
                             )}
                             {isAdmin &&
-                               (order.status === 'approved' ||
-                                 order.status === 'paid') && (
+                              (order.status === 'approved' ||
+                                order.status === 'paid') && (
                                 <button
                                   className="btn btn-sm btn-warning"
                                   onClick={() => openAssignModal(order)}

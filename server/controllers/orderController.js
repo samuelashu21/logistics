@@ -5,6 +5,22 @@ const Vehicle = require('../models/Vehicle');
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
+const ensureOwnerCanManageOrder = async (order, ownerId, action) => {
+  if (!order.vehicle) {
+    return {
+      allowed: false,
+      error: `Owners can only ${action} orders linked to their vehicles`,
+    };
+  }
+
+  const vehicle = await Vehicle.findById(order.vehicle).select('owner');
+  if (!vehicle || vehicle.owner?.toString() !== ownerId) {
+    return { allowed: false, error: `Not authorized to ${action} this order` };
+  }
+
+  return { allowed: true };
+};
+
 // @desc    Get all orders (role-based filtering)
 // @route   GET /api/v1/orders
 exports.getOrders = asyncHandler(async (req, res) => {
@@ -142,6 +158,13 @@ exports.updateOrderStatus = asyncHandler(async (req, res) => {
 // @desc    Approve order
 // @route   PUT /api/v1/orders/:id/approve
 exports.approveOrder = asyncHandler(async (req, res) => {
+  if (!['admin', 'owner'].includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      error: 'Not authorized to approve orders',
+    });
+  }
+
   const order = await Order.findById(req.params.id);
 
   if (!order) {
@@ -152,18 +175,11 @@ exports.approveOrder = asyncHandler(async (req, res) => {
   }
 
   if (req.user.role === 'owner') {
-    if (!order.vehicle) {
+    const ownerCheck = await ensureOwnerCanManageOrder(order, req.user.id, 'approve');
+    if (!ownerCheck.allowed) {
       return res.status(403).json({
         success: false,
-        error: 'Owners can only approve orders linked to their vehicles',
-      });
-    }
-
-    const vehicle = await Vehicle.findById(order.vehicle).select('owner');
-    if (!vehicle || vehicle.owner?.toString() !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        error: 'Not authorized to approve this order',
+        error: ownerCheck.error,
       });
     }
   }
@@ -180,6 +196,13 @@ exports.approveOrder = asyncHandler(async (req, res) => {
 // @desc    Reject order
 // @route   PUT /api/v1/orders/:id/reject
 exports.rejectOrder = asyncHandler(async (req, res) => {
+  if (!['admin', 'owner'].includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      error: 'Not authorized to reject orders',
+    });
+  }
+
   const order = await Order.findById(req.params.id);
 
   if (!order) {
@@ -190,18 +213,11 @@ exports.rejectOrder = asyncHandler(async (req, res) => {
   }
 
   if (req.user.role === 'owner') {
-    if (!order.vehicle) {
+    const ownerCheck = await ensureOwnerCanManageOrder(order, req.user.id, 'reject');
+    if (!ownerCheck.allowed) {
       return res.status(403).json({
         success: false,
-        error: 'Owners can only reject orders linked to their vehicles',
-      });
-    }
-
-    const vehicle = await Vehicle.findById(order.vehicle).select('owner');
-    if (!vehicle || vehicle.owner?.toString() !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        error: 'Not authorized to reject this order',
+        error: ownerCheck.error,
       });
     }
   }
