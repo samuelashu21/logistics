@@ -81,9 +81,9 @@ const OrderDetailPage = () => {
   const canApprove = isAdmin;
   const canAssign = isAdmin || isOwner;
   const currentUserId = user?._id?.toString?.() || user?.id?.toString?.();
-  const isOrderOwner =
+  const isOrderCustomer =
     order?.customer?._id?.toString?.() === currentUserId;
-  const canViewSensitivePaymentDetails = isAdmin || (isCustomer && isOrderOwner);
+  const canViewSensitivePaymentDetails = isAdmin || (isCustomer && isOrderCustomer);
 
   const clearMessages = () => {
     setError('');
