@@ -217,7 +217,7 @@ exports.approveOrder = asyncHandler(async (req, res) => {
     });
   }
 
-  order.status = 'assigned';
+  order.status = 'approved';
   await order.save();
 
   res.status(200).json({
